@@ -8,6 +8,11 @@
 //   void close() {}
 // };
 
+side_length = 4
+nrow = 8
+
+idx = ((nrow / side_length)*floor.(Int, x / side_length)) .+ floor.(Int, y / side_length)
+
 class BaseSink
 {
     BaseSink() {}
