@@ -13,7 +13,7 @@
 class Messenger
 {
 public:
-    Messenger() : _flag(ATOMIC_FLAG_INIT)
+    Messenger()
     {
         // we start in the "set" state, and then check if the flag has been
         // cleared
@@ -22,7 +22,7 @@ public:
     inline bool have_message() { return _flag.test_and_set() == false; }
     inline void send_message() { _flag.clear(); }
 private:
-    std::atomic_flag _flag;
+    std::atomic_flag _flag = ATOMIC_FLAG_INIT;
 };
 
 /* ===========================================================================*/

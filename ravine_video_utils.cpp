@@ -283,7 +283,9 @@ void V4L2::stream()
     timeout.tv_sec = 2;
     timeout.tv_usec = 0;
     
-    while (!_to_stream.have_message())
+    bool error = false;
+    
+    while (!_to_stream.have_message() && !error)
     {
         bool frame_ready = false;
     
@@ -294,11 +296,13 @@ void V4L2::stream()
             if (r == 0)
             {
                 // timed out
+                error = true;
                 break;
             }
             else if (r == -1 && errno != EINTR)
             {
                 // something went wrong
+                error = true;
                 break;
             }
             else if (r > 0)
@@ -321,14 +325,14 @@ void V4L2::stream()
                 //failed to dequeue frame
                 if (errno != EAGAIN)
                 {
-                    return;
+                    error = true;
                 }
                 
             }
             else if (buf.index < _buffers.size())
             {
                 // send to sink (this should be synchronous but fast)
-                // send_to_sink(_buffers[buf.index], buf.bytesused);
+                sink.process(_buffers[buf.index].start, buf.bytesused);
             }
             
             if (ioctl(fd, VIDIOC_QBUF, &buf) < 0)
