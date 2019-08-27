@@ -8,6 +8,9 @@
 
 #define FILESINK_CONTINUE 0x00
 
+// TODO
+//  1. Make FrameBuffers re-usable... and don't free them in FileSink::write_loop
+
 struct CropWindow
 {
     int col;
@@ -71,11 +74,13 @@ private:
 class FileSink
 {
 public:
-    FileSink(const char* filepath) : _frame(0), _state(0x00)
+    FileSink(const char* filepath) : _frame(0)
     {
         _win = {0,0,0,0};
     }
+    
     FileSink(const char* filepath, CropWindow& win) : _frame(0), _win(win) {}
+    
     ~FileSink()
     {
         for (int k = 0; k < _q.size(); ++k)
@@ -88,23 +93,26 @@ public:
             }
         }
     }
+    
     void process(void* data, size_t length, int width)
     {
         FrameBuffer* ptr = nullptr;
         if (_win.width == 0 || _win.height == 0)
         {
-            ptr = new FrameBuffer(data, length);
+            ptr = new FrameBuffer(data, length, width);
         }
         else
         {
             ptr = new FrameBuffer(data, length, width, _win);
         }
         
-        // wait for use of the queue
-        while (_q_busy_flag.test_and_set()) {/*spin*/}
+        // wait for use of the queue, this function needs to return asap
+        // so as not to block the frame acqusition thread, so no sleep
+        while (wait_queue()) {/*spin until queue is available*/}
         _q.push(ptr);
-        _q_busy_flag.clear();
+        release_queue();
     }
+
 private:
     bool next_file()
     {
@@ -117,25 +125,22 @@ private:
     
     void write_loop()
     {
-        bool done = false;
-        while (!done)
+        // write frames as they become available unti we receive the terminate signal
+        while (persist())
         {
-            // wait until the next buffer is ready
-            while (wait_buffer())
+            // wait until the queue is available (does not imply that there is a new buffer)
+            while (wait_queue())
             {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                if (!persist())
-                {
-                    done = true;
-                    break;
-                }
+                // sleeping here has little cost, so allow OS to do other things
+                // (like acquire frames...)
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
             
-            if (!done)
+            // if a new buffer is available, write it to file
+            if (_q.size() > 0)
             {
-                FrameBuffer* ptr = _q.front();
-                _q.pop();
-                _q_busy_flag.clear();
+                FrameBuffer* ptr = pop_queue();
+                release_queue();
                 
                 if (next_file())
                 {
@@ -143,11 +148,32 @@ private:
                     _file.write(buffer, width*height);
                     _file.close();
                 }
+                
+                // NOTE TODO FIXME free the FrameBuffer or re-use it?
+                delete ptr;
             }
+            else
+            {
+                release_queue();
+                
+                // queue is empty, might as well wait
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            }
+            
         }
     }
-    inline bool wait_buffer() { return _q_busy_flag.test_and_set(std::memory_order_acquire); }
+    
+    inline bool wait_queue() { return _q_busy_flag.test_and_set(std::memory_order_acquire); }
+    inline void release_queue() { _q_busy_flag.clear(); }
+    inline Framebuffer* pop_queue()
+    {
+        FrameBuffer* ptr = _q.front();
+        _q.pop();
+        return ptr;
+    }
+    
     inline bool persist() { return _state_continue.test_and_set(std::memory_order_acquire); }
+
 private:
     int _frame;
     std::ofstream _file;
