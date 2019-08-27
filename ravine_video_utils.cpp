@@ -331,8 +331,11 @@ void V4L2::stream()
             }
             else if (buf.index < _buffers.size())
             {
+                // in a YUYV frame, every other sample is luminance, so total bytes is
+                // width x height x 2, so we send width, height and bytesused
+                
                 // send to sink (this should be synchronous but fast)
-                sink.process(_buffers[buf.index].start, buf.bytesused);
+                sink.process(_buffers[buf.index].start, buf.bytesused, _width);
             }
             
             if (ioctl(fd, VIDIOC_QBUF, &buf) < 0)
