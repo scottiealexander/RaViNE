@@ -18,7 +18,7 @@
 #include "ravine_video_utils.hpp"
 
 /* ========================================================================== */
-MMBuffer::MMBuffer(const int fd, const size_t offset, const size_t length) :
+MMBuffer::MMBuffer(int fd, uint32_t offset, uint32_t length) :
     length(length), valid(false)
 {
     start = mmap(nullptr,       // start anywhere
@@ -43,7 +43,7 @@ MMBuffer::~MMBuffer()
 /* ========================================================================== */
 V4L2::V4L2() : _isvalid(true) {}
 /* -------------------------------------------------------------------------- */
-bool V4L2::open_stream(const char* dev, const int width, const int height, const int framerate)
+bool V4L2::open_stream(const char* dev, int width, int height, int framerate)
 {
     bool success = true;
     _fd = open(dev, O_RDWR | O_NONBLOCK, 0);
@@ -113,23 +113,23 @@ bool V4L2::open_stream(const char* dev, const int width, const int height, const
         {
             success = false;
         }
-        else
-        {
-            // log actual framerate? or something like that?
-            success = init_stream(8);
-        }
+        //else
+        //{
+            //// log actual framerate? or something like that?
+            //// success = init_stream(8);
+        //}
     }
 
     return success;
 }
 /* -------------------------------------------------------------------------- */
-bool V4L2::set_framerate(const int& req, float& act)
+bool V4L2::set_framerate(int req, float& act)
 {
     if (!_isvalid) { return false; }
 
     act = -1.0f;
 
-    struct v4l2_streamparm streamparm;
+    v4l2_streamparm streamparm;
 
     CLEAR(streamparm);
 
@@ -158,7 +158,7 @@ bool V4L2::set_framerate(const int& req, float& act)
         if (tpf.denominator != req)
         {
             set_error_msg("Driver rejected framerate set request");
-            act = static_cast<float>(tpf.denominator) / static_cast<float>(tpf.numerator);
+            act = ((float)tpf.denominator) / ((float)tpf.numerator);
             return false;
         }
     }
@@ -171,7 +171,7 @@ bool V4L2::set_framerate(const int& req, float& act)
     return true;
 }
 /* -------------------------------------------------------------------------- */
-bool V4L2::init_stream(const int count)
+bool V4L2::init_stream(int count)
 {
     if (!_isvalid) { return false; }
 
@@ -287,7 +287,14 @@ void V4L2::stream()
     timeout.tv_sec = 2;
     timeout.tv_usec = 0;
 
+    if !(_sink->open_stream(_width, _height, 8))
+    {
+        set_error_msg("Failed to open sink stream");
+        return;
+    }
+
     bool error = false;
+    std::string err_msg;
 
     while (persist() && !error)
     {
@@ -301,12 +308,14 @@ void V4L2::stream()
             {
                 // timed out
                 error = true;
+                err_msg = "Select timed out waiting for frame";
                 break;
             }
             else if (r == -1 && errno != EINTR)
             {
                 // something went wrong
                 error = true;
+                err_msg = "Error occured in select!";
                 break;
             }
             else if (r > 0)
@@ -331,6 +340,7 @@ void V4L2::stream()
                 if (errno != EAGAIN)
                 {
                     error = true;
+                    err_msg = "Failed to dqueue frame";
                 }
 
             }
@@ -340,16 +350,25 @@ void V4L2::stream()
                 // width x height x 2, so we send width and bytesused
 
                 // send to sink (this should be synchronous but fast)
-                sink.process(_buffers[buf.index].start, buf.bytesused, _width);
+                _sink->process(_buffers[buf.index].start, buf.bytesused, _width);
 
                 if (ioctl(fd, VIDIOC_QBUF, &buf) < 0)
                 {
                     // NOTE TODO FIXME: what do we do here?
                     // failed to re-queue the frame
+                    error = true;
+                    err_msg = "failed to re-queue frame";
                 }
             }
         }
     }
+
+    if (error)
+    {
+        set_error_msg(err_msg);
+    }
+
+    _sink->close_stream();
 }
 /* -------------------------------------------------------------------------- */
 bool V4L2::stop_stream()

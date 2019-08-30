@@ -8,16 +8,20 @@
 #include <atomic>
 #include <thread>
 
+// NOTE TODO FIXME: implelemt BaseSink system...
+//  * also, video utils should be renamed and put in the ravine namespace
+#include "ravine_file_sink.hpp"
+
 #define CLEAR(x) (memset(&(x), 0, sizeof(x)))
 
 /* ===========================================================================*/
 struct MMBuffer
 {
-    MMBuffer(const int, const size_t, const size_t);
+    MMBuffer(int, uint32_t, uint32_t);
     ~MMBuffer();
 
     void* start;
-    size_t length;
+    uint32_t length;
     bool valid;
 };
 
@@ -28,13 +32,15 @@ class V4L2
 public:
     V4L2();
     ~V4L2();
-    bool open_stream(const char*, const int, const int, const int);
+    bool open_stream(const char*, int, int, int);
     bool start_stream();
     bool stop_stream();
     bool close_stream();
 
-    bool set_framerate(const int&, float&);
-    bool init_stream(const int count = 8);
+    bool set_framerate(int, float&);
+    bool init_stream(int count = 8);
+
+    inline void register_sink(BaseSink* sink) { _sink = sink; }
 
     inline const std::string& get_error_msg() const { return _err_msg; }
     inline bool isvalid() const { return _isvalid; }
@@ -59,13 +65,14 @@ private:
 
     int _width;
     int _height;
+    std::string _err_msg;
 
     BufferVec _buffers;
 
     std::atomic_flag _state_continue = ATOMIC_FLAG_INIT;
     std::thread _stream_thread;
 
-    std::string _err_msg;
+    BaseSink* _sink;
 };
 /* ===========================================================================*/
 #endif

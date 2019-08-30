@@ -2,6 +2,7 @@
 #define RAVINE_FILE_SINK_HPP_
 
 #include <fstream>
+#include <thread>
 #include <atomic>
 #include <queue>
 
@@ -14,13 +15,16 @@ namespace ravine
     class FileSink
     {
     public:
-        FileSink(const char* filepath, int width, int height, int nbuffer);
-        FileSink(const char* filepath, CropWindow& win, int nbuffer);
+        FileSink() { _win = {0, 0, 0, 0}; _state_continue.test_and_set(); }
         ~FileSink();
 
+        bool open_stream(int width, int height, int nbuffer);
+        bool open_stream(const CropWindow& win, int nbuffer);
+        bool close_stream();
         bool process(void* data, uint32_t length, int width);
 
     private:
+        bool open_stream(int n);
         void allocate_buffers(int n);
         bool next_file();
         void write_loop();
@@ -42,6 +46,7 @@ namespace ravine
         std::atomic_flag _qin_busy = ATOMIC_FLAG_INIT;
         std::queue<FrameBuffer*> _qin;
 
+        std::thread _write_thread;
     };
 }
 #endif

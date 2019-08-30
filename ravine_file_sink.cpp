@@ -1,6 +1,7 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <thread>
 #include <queue>
 
 #include <cinttypes>
@@ -37,23 +38,43 @@ namespace ravine
         }
     }
     /* ====================================================================== */
-    FileSink::FileSink(const char* filepath, int width, int height, int nbuffer) :
-        _frame(0)
-    {
-        _win = {0, 0, width, height};
-        allocate_buffers(nbuffer);
-    }
-    /* ---------------------------------------------------------------------- */
-    FileSink::FileSink(const char* filepath, CropWindow& win, int nbuffer)
-        _frame(0), _win(win)
-    {
-        allocate_buffers(nbuffer);
-    }
-    /* ---------------------------------------------------------------------- */
     FileSink::~FileSink()
     {
         delete_queue(_qout);
         delete_queue(_qin);
+        if (_file.is_open())
+        {
+            _file.close();
+        }
+    }
+    /* ---------------------------------------------------------------------- */
+    bool FileSink::open_stream(int width, int height, int nbuffer)
+    {
+        _win = {0, 0, width, height};
+        return open_stream(nbuffer);
+    }
+    /* ---------------------------------------------------------------------- */
+    bool FileSink::open_stream(const CropWindow& win, int nbuffer)
+    {
+        _win = win;
+        return open_stream(nbuffer);
+    }
+    /* ---------------------------------------------------------------------- */
+    bool FileSink::open_stream(int nbuffer)
+    {
+        allocate_buffers(nbuffer);
+        if (_qin.size() < nbuffer) { return false; }
+
+        _write_thread = std::thread(&FileSink::write_loop, this);
+        return true;
+    }
+    /* ---------------------------------------------------------------------- */
+    bool FileSink::close_stream()
+    {
+        // set "continue" flag to false
+        _state_continue.clear();
+        _write_thread.join();
+        return true;
     }
     /* ---------------------------------------------------------------------- */
     bool FileSink::process(void* data, uint32_t length, int width)
@@ -62,7 +83,7 @@ namespace ravine
         // so as not to block the frame acqusition thread, so no sleep
         while (wait_flag(_qin_busy)) {/* spin until queue is available */}
 
-        // no buffer are available, drop the frame...
+        // no buffers are available, drop the frame...
         if (_qin.size() < 1) { return false; }
 
         FrameBuffer* ptr = pop_queue(_qin);

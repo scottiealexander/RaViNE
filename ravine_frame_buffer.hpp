@@ -8,14 +8,14 @@ namespace ravine
     /* ====================================================================== */
     struct CropWindow
     {
-        int col;
-        int row;
-        int width;
-        int height;
         inline uint32_t length() const
         {
             return ((uint32_t)width) * ((uint32_t)height);
         }
+        int col;
+        int row;
+        int width;
+        int height;
     }
     /* ====================================================================== */
     class FrameBuffer

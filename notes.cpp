@@ -19,12 +19,12 @@ class BaseSink
     ~BaseSink() {}
     void open_stream() {}
     void close_stream() {}
-    void send() {}
+    void process() {}
 };
 
 class FileSink : public BaseSink
 {
-    
+
 };
 
 class BaseSource
@@ -36,19 +36,19 @@ class BaseSource
     void stop_stream() {}
     void close_stream() {}
     void register_sink() {}
-    
+
     // calls register_sink()
     void operator>>(Sink&) {}
 };
 
 class VideoSource : public BaseSource
 {
-    
+
 };
 
 class EventSource : public BaseSource
 {
-    
+
 };
 
 class BaseFilter : public BaseSource, public BaseSink
@@ -60,12 +60,12 @@ class BaseFilter : public BaseSource, public BaseSink
 
 class AudioFilter : public BaseFilter
 {
-    
+
 };
 
 class NeuronFilter : public BaseFilter
 {
-    
+
 };
 
 // source >> filter >> sink

@@ -17,6 +17,8 @@
 #include <string.h>
 #include <time.h>
 
+#include "ravine_video_utils.hpp"
+
 // convert 100us units to milliseconds
 #define V4L2_TIME_MS 10
 
@@ -29,62 +31,9 @@ using namespace std;
 /* ========================================================================= */
 int main()
 {
-    // 1.  Open the device
-    int fd; // A file descriptor to the video device
-    fd = open("/dev/video2", O_RDWR);
-    
-    if(fd < 0)
-    {
-        perror("Failed to open device, OPEN");
-        return 1;
-    }
+    const char* dev = "/dev/video0";
 
 
-    // 2. Ask the device if it can capture frames
-    v4l2_capability capability;
-    if(ioctl(fd, VIDIOC_QUERYCAP, &capability) < 0)
-    {
-        // something went wrong... exit
-        perror("Failed to get device capabilities, VIDIOC_QUERYCAP");
-        return 1;
-    }
-    
-    v4l2_control c;
-    c.id = V4L2_CID_EXPOSURE_AUTO;
-    c.value = V4L2_EXPOSURE_MANUAL;
-    
-    if(ioctl(fd, VIDIOC_S_CTRL, &c) < 0)
-    {
-        perror("Failed to set exposure state");
-        return 1;
-    }
-    
-    c.id = V4L2_CID_EXPOSURE_ABSOLUTE;
-    c.value = 50 * V4L2_TIME_MS;
-    if(ioctl(fd, VIDIOC_S_CTRL, &c) < 0)
-    {
-        perror("Failed to set exposure value");
-        return 1;
-    }
-
-    // 3. Set Image format
-    v4l2_format imageFormat;
-    imageFormat.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    imageFormat.fmt.pix.width = WIDTH;
-    imageFormat.fmt.pix.height = HEIGHT;
-    
-    // imageFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
-    imageFormat.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV; //YUV 4:2:2 [Y0,U0,Y1,V0]
-    
-    
-    imageFormat.fmt.pix.field = V4L2_FIELD_NONE;
-    
-    // tell the device you are using this format
-    if(ioctl(fd, VIDIOC_S_FMT, &imageFormat) < 0)
-    {
-        perror("Device could not set format, VIDIOC_S_FMT");
-        return 1;
-    }
 
 
     // 4. Request Buffers from the device
@@ -111,7 +60,7 @@ int main()
         perror("Device did not return the buffer information, VIDIOC_QUERYBUF");
         return 1;
     }
-    
+
     // use a pointer to point to the newly created buffer
     // mmap() will map the memory address of the device to
     // an address in memory
@@ -140,12 +89,12 @@ int main()
     uint8_t* img = (uint8_t*)malloc(WIDTH * HEIGHT * sizeof(uint8_t));
     float dur = 0.0f;
     int32_t nframe = 0;
-    
+
     for (int32_t k = 0; k < 30; ++k)
     {
         struct timespec t1, t2;
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t1);
-    
+
         // Queue the buffer
         if(ioctl(fd, VIDIOC_QBUF, &bufferinfo) < 0)
         {
@@ -154,7 +103,7 @@ int main()
             // perror("Could not queue buffer, VIDIOC_QBUF");
             // return 1;
         }
-    
+
         // Dequeue the buffer
         if(ioctl(fd, VIDIOC_DQBUF, &bufferinfo) < 0)
         {
@@ -164,19 +113,19 @@ int main()
             // return 1;
         }
         // Frames get written after dequeuing the buffer
-        
+
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t2);
 
         nframe += 1;
-        
+
         dur += (float)(t2.tv_sec - t1.tv_sec) * 1000.0 +
             (float)(t2.tv_nsec - t1.tv_nsec) / 1000000.0;
-            
+
         if (bufferinfo.bytesused == (WIDTH*HEIGHT*sizeof(uint16_t)))
         {
             yuv422_to_gray(buffer, WIDTH, HEIGHT, img);
             normalize(img, WIDTH, HEIGHT);
-            
+
             char fname[32] = {'\0'};
             sprintf(fname, "./frame-%03d.pgm", k);
             write_pgm(img, WIDTH, HEIGHT, fname);
@@ -185,13 +134,13 @@ int main()
         {
             printf("[ERROR]: expected %d bytes, got %d\n", WIDTH*HEIGHT*2, bufferinfo.bytesused);
         }
-        
+
     }
 
     free(img);
-    
+
     cout << "Elapsed time: " << dur / nframe << " milliseconds" << endl;
-    
+
 
 /******************************** end looping here **********************/
 
