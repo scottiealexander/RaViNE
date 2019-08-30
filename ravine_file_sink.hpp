@@ -2,6 +2,7 @@
 #define RAVINE_FILE_SINK_HPP_
 
 #include <fstream>
+#include <atomic>
 #include <queue>
 
 #include <cinttypes>
@@ -26,9 +27,6 @@ namespace ravine
 
         inline bool persist()
         { return _state_continue.test_and_set(std::memory_order_acquire); }
-
-        inline void sleep_ms(int n)
-        { std::this_thread::sleep_for(std::chrono::milliseconds(n)); }
 
     private:
         int _frame;

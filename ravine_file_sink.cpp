@@ -5,6 +5,7 @@
 
 #include <cinttypes>
 
+#include "ravine_utils.hpp"
 #include "ravine_buffer.hpp"
 #include "ravine_file_sink.hpp"
 

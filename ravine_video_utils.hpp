@@ -9,21 +9,6 @@
 #include <thread>
 
 #define CLEAR(x) (memset(&(x), 0, sizeof(x)))
-/* ===========================================================================*/
-class Messenger
-{
-public:
-    Messenger()
-    {
-        // we start in the "set" state, and then check if the flag has been
-        // cleared
-        _flag.test_and_set();
-    }
-    inline bool have_message() { return _flag.test_and_set() == false; }
-    inline void send_message() { _flag.clear(); }
-private:
-    std::atomic_flag _flag = ATOMIC_FLAG_INIT;
-};
 
 /* ===========================================================================*/
 struct MMBuffer
@@ -47,35 +32,39 @@ public:
     bool start_stream();
     bool stop_stream();
     bool close_stream();
-    
+
     bool set_framerate(const int&, float&);
     bool init_stream(const int count = 8);
-    
+
     inline const std::string& get_error_msg() const { return _err_msg; }
     inline bool isvalid() const { return _isvalid; }
     inline int buffer_count() const { return _buffers.size(); }
 
 private:
     void stream();
+
     inline void set_error_msg(const std::string& msg)
     {
         _err_msg = msg;
         _isvalid = false;
     }
-    
+
+    inline bool persist()
+    { return _state_continue.test_and_set(std::memory_order_acquire); }
+    inline void send_stop() { _state_continue.clear(); }
+
 private:
     int _fd;
     bool _isvalid;
-    
+
     int _width;
     int _height;
-    
+
     BufferVec _buffers;
-    
-    Messenger _to_stream;
-    
+
+    std::atomic_flag _state_continue = ATOMIC_FLAG_INIT;
     std::thread _stream_thread;
-    
+
     std::string _err_msg;
 };
 /* ===========================================================================*/

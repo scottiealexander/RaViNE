@@ -1,3 +1,5 @@
+#include <thread>
+
 #include <sys/select.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
@@ -12,6 +14,7 @@
 #include <linux/videodev2.h>
 
 
+#include "ravine_utils.hpp"
 #include "ravine_video_utils.hpp"
 
 /* ========================================================================== */
@@ -25,7 +28,7 @@ MMBuffer::MMBuffer(const int fd, const size_t offset, const size_t length) :
         fd,
         offset
     );
-    
+
     valid = start != MAP_FAILED;
 }
 /* -------------------------------------------------------------------------- */
@@ -44,7 +47,7 @@ bool V4L2::open_stream(const char* dev, const int width, const int height, const
 {
     bool success = true;
     _fd = open(dev, O_RDWR | O_NONBLOCK, 0);
-    
+
     if (_fd < 0)
     {
         set_error_msg("Failed to open device");
@@ -53,7 +56,7 @@ bool V4L2::open_stream(const char* dev, const int width, const int height, const
     else
     {
         v4l2_capability cap = {0};
-        
+
         // make sure the device can capture  / stream images / video
         if(ioctl(_fd, VIDIOC_QUERYCAP, &cap) < 0)
         {
@@ -75,17 +78,17 @@ bool V4L2::open_stream(const char* dev, const int width, const int height, const
             else
             {
                 v4l2_format fmt = {0};
-                
+
                 fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
                 fmt.fmt.pix.width = width;
                 fmt.fmt.pix.height = height;
-                
+
                 // YUV 4:2:2 [Y0,U0,Y1,V0]
                 fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-                
-                
+
+
                 fmt.fmt.pix.field = V4L2_FIELD_NONE;
-                
+
                 // set / validate the requested image size
                 if(ioctl(_fd, VIDIOC_S_FMT, &fmt) < 0)
                 {
@@ -100,9 +103,9 @@ bool V4L2::open_stream(const char* dev, const int width, const int height, const
                 }
             }
         }
-    
+
     }
-    
+
     if (success)
     {
         float act;
@@ -116,28 +119,28 @@ bool V4L2::open_stream(const char* dev, const int width, const int height, const
             success = init_stream(8);
         }
     }
-    
+
     return success;
 }
 /* -------------------------------------------------------------------------- */
 bool V4L2::set_framerate(const int& req, float& act)
 {
     if (!_isvalid) { return false; }
-    
+
     act = -1.0f;
-    
+
     struct v4l2_streamparm streamparm;
-    
+
     CLEAR(streamparm);
-    
+
     streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    
+
     if (ioctl(fd, VIDIOC_G_PARM, &streamparm) < 0)
     {
         set_error_msg("Failed to get stream param");
         return false;
     }
-    
+
     if (streamparm.parm.capture.capability & V4L2_CAP_TIMEPERFRAME)
     {
         auto &tpf = streamparm.parm.capture.timeperframe;
@@ -164,19 +167,19 @@ bool V4L2::set_framerate(const int& req, float& act)
         set_error_msg("Drive doesn't allow setting framerate");
         return false;
     }
-    
+
     return true;
 }
 /* -------------------------------------------------------------------------- */
 bool V4L2::init_stream(const int count)
 {
     if (!_isvalid) { return false; }
-    
+
     bool success = true;
-    
+
     // ask the device to initilize buffer for capture streaming
     v4l2_requestbuffers req = {0};
-    
+
     req.count = count;
     req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     req.memory = V4L2_MEMORY_MMAP;
@@ -195,30 +198,30 @@ bool V4L2::init_stream(const int count)
         for (int k = 0; k < req.count; ++k)
         {
             v4l2_buffer buf;
-    
+
             CLEAR(buf);
-    
+
             buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
             buf.memory = V4L2_MEMORY_MMAP;
             buf.index = k;
-    
+
             if (ioctl(fd, VIDIOC_QUERYBUF, &buf) < 0)
             {
                 set_error_msg("Failed to query buffers");
                 success = false;
                 break;
             }
-            
+
             _buffers[k] = MMBuffer(_fd, buf.m.offset, buf.length);
-    
-    
+
+
             if (!_buffers[k].valid)
             {
                 set_error_msg("Failed to mmap buffer");
                 success = false;
                 break;
             }
-            
+
         }
     }
     else
@@ -226,14 +229,14 @@ bool V4L2::init_stream(const int count)
         set_error_msg("Insufficient memory on device");
         success = false;
     }
-    
+
     return success;
 }
 /* -------------------------------------------------------------------------- */
 bool V4L2::start_stream()
 {
     if (!_isvalid) { return false; }
-    
+
     bool success = true;
     v4l2_buf_type type;
 
@@ -243,7 +246,7 @@ bool V4L2::start_stream()
         struct v4l2_buffer buf;
 
         CLEAR(buf);
-        
+
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory = V4L2_MEMORY_MMAP;
         buf.index = k;
@@ -255,21 +258,22 @@ bool V4L2::start_stream()
             break;
         }
     }
-    
-    
+
+
     if (success)
     {
         v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        
+
         if (ioctl(_fd, VIDIOC_STREAMON, &type) < 0)
         {
             set_error_message("Failed to start streaming");
             success = false;
         }
     }
-    
-    stream();
-    
+
+    // launch the actual frame stream
+    _stream_thread = std::thread(&V4L2::stream, this);
+
     return success;
 }
 /* -------------------------------------------------------------------------- */
@@ -278,20 +282,20 @@ void V4L2::stream()
     fd_set fds;
     FD_ZERO(&fds);
     FD_SET(_fd, &fds);
-    
+
     timeval timeout;
     timeout.tv_sec = 2;
     timeout.tv_usec = 0;
-    
+
     bool error = false;
-    
-    while (!_to_stream.have_message() && !error)
+
+    while (persist() && !error)
     {
         bool frame_ready = false;
-    
+
         while (!frame_ready)
         {
-            r = select(_fd + 1, &fds, NULL, NULL, &tv);
+            int r = select(_fd + 1, &fds, NULL, NULL, &tv);
 
             if (r == 0)
             {
@@ -309,17 +313,18 @@ void V4L2::stream()
             {
                 frame_ready = true;
             }
-            
+
             // sleep for a bit
+            sleep_ms(10);
         }
-        
+
         if (frame_ready)
         {
             v4l2_buffer buf = {0};
-            
+
             buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
             buf.memory = V4L2_MEMORY_MMAP;
-            
+
             if (ioctl(fd, VIDIOC_DQBUF, &buf) < 0)
             {
                 //failed to dequeue frame
@@ -327,20 +332,21 @@ void V4L2::stream()
                 {
                     error = true;
                 }
-                
+
             }
             else if (buf.index < _buffers.size())
             {
                 // in a YUYV frame, every other sample is luminance, so total bytes is
-                // width x height x 2, so we send width, height and bytesused
-                
+                // width x height x 2, so we send width and bytesused
+
                 // send to sink (this should be synchronous but fast)
                 sink.process(_buffers[buf.index].start, buf.bytesused, _width);
-            }
-            
-            if (ioctl(fd, VIDIOC_QBUF, &buf) < 0)
-            {
-                // failed to re-queue the frame
+
+                if (ioctl(fd, VIDIOC_QBUF, &buf) < 0)
+                {
+                    // NOTE TODO FIXME: what do we do here?
+                    // failed to re-queue the frame
+                }
             }
         }
     }
@@ -348,12 +354,12 @@ void V4L2::stream()
 /* -------------------------------------------------------------------------- */
 bool V4L2::stop_stream()
 {
-    _to_stream.send_message();
+    send_stop();
     _stream_thread.join();
     return true;
 }
 /* -------------------------------------------------------------------------- */
-bool close_stream()
+bool V4L2::close_stream()
 {
     bool success = true;
     v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -363,13 +369,9 @@ bool close_stream()
         set_error_msg("Failed to stop stream");
         success = false;
     }
-    
+
     close(_fd);
-    
+
     return success;
 }
-/* -------------------------------------------------------------------------- */
-// std::atomic_bool end;
-// if (end.load())
-// from main thread, end.store(true)
 /* ========================================================================== */
