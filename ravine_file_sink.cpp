@@ -38,6 +38,17 @@ namespace ravine
         }
     }
     /* ====================================================================== */
+    FileSink::FileSink(const CropWindow& win, int nbuff) : _win(win)
+    {
+        init(nbuff);
+    }
+    /* ---------------------------------------------------------------------- */
+    FileSink::FileSink(int width, int height, int nbuff)
+    {
+        _win = {0, 0, width, height};
+        init(nbuff);
+    }
+    /* ---------------------------------------------------------------------- */
     FileSink::~FileSink()
     {
         delete_queue(_qout);
@@ -48,21 +59,14 @@ namespace ravine
         }
     }
     /* ---------------------------------------------------------------------- */
-    bool FileSink::open_stream(int width, int height, int nbuffer)
+    void FileSink::init(int nbuff)
     {
-        _win = {0, 0, width, height};
-        return open_stream(nbuffer);
+        _state_continue.test_and_set();
+        allocate_buffers(nbuff);
     }
     /* ---------------------------------------------------------------------- */
-    bool FileSink::open_stream(const CropWindow& win, int nbuffer)
+    bool FileSink::open_stream()
     {
-        _win = win;
-        return open_stream(nbuffer);
-    }
-    /* ---------------------------------------------------------------------- */
-    bool FileSink::open_stream(int nbuffer)
-    {
-        allocate_buffers(nbuffer);
         if (_qin.size() < nbuffer) { return false; }
 
         _write_thread = std::thread(&FileSink::write_loop, this);

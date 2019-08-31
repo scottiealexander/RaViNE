@@ -15,16 +15,16 @@ namespace ravine
     class FileSink
     {
     public:
-        FileSink() { _win = {0, 0, 0, 0}; _state_continue.test_and_set(); }
+        FileSink(const CropWindow& win, int nbuf); { _win = {0, 0, 0, 0}; _state_continue.test_and_set(); }
+        FileSink(int width, int height, int nbuf);
         ~FileSink();
 
-        bool open_stream(int width, int height, int nbuffer);
-        bool open_stream(const CropWindow& win, int nbuffer);
+        bool open_stream();
         bool close_stream();
         bool process(void* data, uint32_t length, int width);
 
     private:
-        bool open_stream(int n);
+        void init(int n);
         void allocate_buffers(int n);
         bool next_file();
         void write_loop();
