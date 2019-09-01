@@ -17,10 +17,10 @@
 #include <string.h>
 #include <time.h>
 
-#include "ravine_video_utils.hpp"
+#include "ravine_video_source.hpp"
+#include "ravine_image_utils.hpp"
 
-// convert 100us units to milliseconds
-#define V4L2_TIME_MS 10
+#define FRAMERATE 15
 
 #define MICROSECONDS 1000000
 #define WIDTH 640
@@ -33,8 +33,16 @@ int main()
 {
     const char* dev = "/dev/video0";
 
+    RVN::V4L2 source(dev, WIDTH, HEIGHT, FRAMERATE);
 
+    if (!source.open_stream())
+    {
+        printf("[ERROR]: failed to open stream\n");
+        printf("[MSG]: %s\n", source.get_error_msg().c_str());
+        return -1;
+    }
 
+    int fd = source.get_fd();
 
     // 4. Request Buffers from the device
     v4l2_requestbuffers requestBuffer = {0};
@@ -49,7 +57,7 @@ int main()
     }
 
 
-    // 5. Quety the buffer to get raw data ie. ask for the you requested buffer
+    // 5. Query the buffer to get raw data ie. ask for the you requested buffer
     // and allocate memory for it
     v4l2_buffer queryBuffer = {0};
     queryBuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -127,7 +135,7 @@ int main()
             normalize(img, WIDTH, HEIGHT);
 
             char fname[32] = {'\0'};
-            sprintf(fname, "./frame-%03d.pgm", k);
+            sprintf(fname, "./frames/frame-%03d.pgm", k);
             write_pgm(img, WIDTH, HEIGHT, fname);
         }
         else

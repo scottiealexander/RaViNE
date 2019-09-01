@@ -8,9 +8,8 @@
 #include <atomic>
 #include <thread>
 
-// NOTE TODO FIXME: implelemt BaseSink system...
-//  * also, video utils should be renamed and put in the ravine namespace
 #include "ravine_sink_base.hpp"
+#include "ravine_source_base.hpp"
 #include "ravine_packets.hpp"
 
 #define CLEAR(x) (memset(&(x), 0, sizeof(x)))
@@ -27,26 +26,26 @@ namespace RNV
 
     using BufferVec = std::vector<MMBuffer>;
     /* =======================================================================*/
-    class V4L2
+    class V4L2 : public Source<YUYVImagePacket>
     {
     public:
-        V4L2();
-        ~V4L2();
-        bool open_stream(const char*, int, int, int);
+        V4L2(const char*, int, int, int);
+
+        bool open_stream();
         bool start_stream();
         bool stop_stream();
         bool close_stream();
 
-        bool set_framerate(int, float&);
-        bool init_stream(int count = 8);
-
-        inline void register_sink(BaseSink* sink) { _sink = sink; }
+        bool initialize_buffers(int count = 8);
 
         inline const std::string& get_error_msg() const { return _err_msg; }
         inline bool isvalid() const { return _isvalid; }
         inline int buffer_count() const { return _buffers.size(); }
 
+        inline int get_fd() { return _fd; }
+
     private:
+        bool set_framerate(int, float&);
         void stream();
 
         inline void set_error_msg(const std::string& msg)
@@ -56,23 +55,27 @@ namespace RNV
         }
 
         inline bool persist()
-        { return _state_continue.test_and_set(std::memory_order_acquire); }
+        {
+            return _state_continue.test_and_set(std::memory_order_acquire);
+        }
+
         inline void send_stop() { _state_continue.clear(); }
 
     private:
+        const std::string _dev;
         int _fd;
-        bool _isvalid;
 
         int _width;
         int _height;
+        int _framerate;
+
+        bool _isvalid;
         std::string _err_msg;
 
         BufferVec _buffers;
 
         std::atomic_flag _state_continue = ATOMIC_FLAG_INIT;
         std::thread _stream_thread;
-
-        BaseSink* _sink;
     };
     /* =======================================================================*/
 }

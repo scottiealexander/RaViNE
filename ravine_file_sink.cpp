@@ -69,7 +69,7 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     bool FileSink::open_stream()
     {
-        if (_qin.size() < nbuffer) { return false; }
+        if (_qin.size() < 1) { return false; }
 
         _write_thread = std::thread(&FileSink::write_loop, this);
         return true;
