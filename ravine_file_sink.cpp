@@ -7,10 +7,10 @@
 #include <cinttypes>
 
 #include "ravine_utils.hpp"
-#include "ravine_buffer.hpp"
+#include "ravine_frame_buffer.hpp"
 #include "ravine_file_sink.hpp"
 
-namespace ravine
+namespace RVN
 {
     /* ====================================================================== */
     inline Framebuffer* pop_queue(std::queue<FrameBuffer*>& q)
@@ -21,7 +21,9 @@ namespace ravine
     }
     /* ---------------------------------------------------------------------- */
     inline bool wait_flag(std::atomic_flag& f)
-    { return f.test_and_set(std::memory_order_acquire); }
+    {
+        return f.test_and_set(std::memory_order_acquire);
+    }
     /* ---------------------------------------------------------------------- */
     inline void release_flag(std::atomic_flag& f) { f.clear(); }
     /* ---------------------------------------------------------------------- */
@@ -81,7 +83,7 @@ namespace ravine
         return true;
     }
     /* ---------------------------------------------------------------------- */
-    bool FileSink::process(void* data, uint32_t length, int width)
+    bool FileSink::process(YUYVImagePacket& packet)
     {
         // wait for use of the queue, this function needs to return asap
         // so as not to block the frame acqusition thread, so no sleep
@@ -94,7 +96,7 @@ namespace ravine
         release_flag(_qin_busy);
 
         // copy data, no alloc / free
-        ptr->set_data(static_cast<uint8_t*>(data), length, width);
+        ptr->set_data(packet);
 
         // again, no sleep to stay quick
         while (wait_flag(_qout_busy)) {/* spin */}

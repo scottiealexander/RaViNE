@@ -1,28 +1,39 @@
-//
-
-// class Device
-// {
-//   Device() {}
-//   ~Device() {}
-//   void open() {}
-//   void close() {}
-// };
-
-side_length = 4
-nrow = 8
-
-idx = ((nrow / side_length)*floor.(Int, x / side_length)) .+ floor.(Int, y / side_length)
-
-class BaseSink
+template <class T>
+class Packet
 {
-    BaseSink() {}
-    ~BaseSink() {}
-    void open_stream() {}
-    void close_stream() {}
-    void process() {}
+public:
+    Packet(T data) : _data(data) {}
+    Packet() = default;
+    T data() { return _data; }
+protected:
+    T _data;
 };
 
-class FileSink : public BaseSink
+template <class PacketType>
+class Sink
+{
+public:
+    virtual bool open_stream() = 0;
+    virtual bool close_stream() = 0;
+    virtual void process(PacketType& sig) = 0;
+};
+
+template <class PacketType>
+class Source
+{
+public:
+    virtual bool open_stream() = 0;
+    virtual bool start_stream() = 0;
+    virtual bool stop_stream() = 0;
+    virtual bool close_stream() = 0;
+
+    void register_sink(Sink<SingalType>* sink) { _sink = sink; }
+protected:
+    Sink<PacketType>* _sink;
+};
+
+
+class FileSink : public Sink
 {
 
 };

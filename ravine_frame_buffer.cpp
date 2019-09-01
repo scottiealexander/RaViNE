@@ -1,15 +1,9 @@
-#include <new>
 
-#include "ravine_buffer.hpp"
+#include "ravine_frame_buffer.hpp"
 
-namespace ravine
+namespace RVN
 {
     /* ====================================================================== */
-    FrameBuffer::FrameBuffer(uint32_t length) : _length(length)
-    {
-        _data = new uint8_t[_length];
-    }
-    /* ---------------------------------------------------------------------- */
     FrameBuffer::~FrameBuffer()
     {
         if (_data != nullptr)
@@ -18,34 +12,41 @@ namespace ravine
         }
     }
     /* ====================================================================== */
-    void FullFrameBuffer::set_data(void* data, uint32_t size, int width) override
+    void FullFrameBuffer::set_data(YUYVImagePacket& packet)
     {
-        uint32_t inc = 0;
+        int32_t inc = 0;
 
-        uint32_t end = min(_length*2, size);
+        int32_t end = min(_length*2, size);
+
+        // copy from input packet to internal storage
+        uint8_t* data_in = packet.data();
+        uint8_t* data = data();
 
         // +=2 for YUYV encoding
         for (uint32_t k = 0; k < end; k += 2, ++inc)
         {
-            _data[inc] = data[k];
+            data[inc] = data_in[k];
         }
     }
     /* ====================================================================== */
-    void CroppedFrameBuffer::set_data(void* data, uint32_t size, int width)
+    void CroppedFrameBuffer::set_data(YUYVImagePacket& packet)
     {
-        int inc = 0;
+        int32_t inc = 0;
 
         // in YUYV, every other element is luminance channel
-        int row_length = width * 2;
+        int row_length = packet.width() * 2;
 
-        for (int k = _win->row; k < _win->height; ++k, ++inc)
+        uint8_t* data_in = packet.data();
+        uint8_t* data = data();
+
+        for (int k = _win->row; k < _win->height; ++k)
         {
-            for (int j = (_win->col * 2); j < (_win->width*2); j+=2)
+            for (int j = (_win->col * 2); j < (_win->width*2); j+=2, ++inc)
             {
-                int idx = (k * row_length + j);
+                int32_t idx = (k * row_length + j);
                 if (idx < size)
                 {
-                    _data[inc] = data[idx];
+                    data[inc] = data_in[idx];
                 }
             }
         }

@@ -9,19 +9,21 @@
 #include <cinttypes>
 
 #include "ravine_buffer.hpp"
+#include "ravine_packets.hpp"
+#incoude "ravine_sink_base.hpp"
 
-namespace ravine
+namespace RVN
 {
-    class FileSink
+    class FileSink : public Sink<YUYVImagePacket>
     {
     public:
-        FileSink(const CropWindow& win, int nbuf); { _win = {0, 0, 0, 0}; _state_continue.test_and_set(); }
+        FileSink(const CropWindow& win, int nbuf);
         FileSink(int width, int height, int nbuf);
         ~FileSink();
 
-        bool open_stream();
-        bool close_stream();
-        bool process(void* data, uint32_t length, int width);
+        bool open_stream() override;
+        bool close_stream() override;
+        bool process(YUYVImagePacket& packet) override;
 
     private:
         void init(int n);
@@ -30,7 +32,9 @@ namespace ravine
         void write_loop();
 
         inline bool persist()
-        { return _state_continue.test_and_set(std::memory_order_acquire); }
+        {
+            return _state_continue.test_and_set(std::memory_order_acquire);
+        }
 
     private:
         int _frame;

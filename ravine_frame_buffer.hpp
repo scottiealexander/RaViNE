@@ -1,16 +1,20 @@
-#ifndef RAVINE_BUFFER_HPP_
-#define RAVINE_BUFFER_HPP_
+#ifndef RAVINE_FRAME_BUFFER_HPP_
+#define RAVINE_FRAME_BUFFER_HPP_
+
+#include <new>
+
+#include "ravine_packets.hpp"
 
 #define min(x, y) ((x) < (y) ? (x) : (y))
 
-namespace ravine
+namespace RVN
 {
     /* ====================================================================== */
     struct CropWindow
     {
-        inline uint32_t length() const
+        inline length_t length() const
         {
-            return ((uint32_t)width) * ((uint32_t)height);
+            return ((length_t)width) * ((length_t)height);
         }
         int col;
         int row;
@@ -18,22 +22,16 @@ namespace ravine
         int height;
     }
     /* ====================================================================== */
-    class FrameBuffer
+    class FrameBuffer : public BufferPacket<uint8_t>
     {
     public:
-        FrameBuffer(uint32_t length);
+        FrameBuffer::FrameBuffer(length_t length) :
+            BufferPacket<uint8_t>(new uint8_t[length], length) {}
         ~FrameBuffer();
 
-        inline uint8_t* data() { return _data; }
-        inline uint32_t length() const { return _length; }
-
-        virtual void set_data(void* data, uint32_t size) {};
+        virtual void set_data(YUYVImagePacket& packet) {};
         virtual int width() const { return 0; };
         virtual int height() const { return 0; };
-
-    protected:
-        uint8_t* _data = nullptr;
-        uint32_t _length;
     };
     /* ====================================================================== */
     class FullFrameBuffer : public FrameBuffer
@@ -42,7 +40,7 @@ namespace ravine
         FullFrameBuffer(int width, int height) :
             FrameBuffer(width*height), _width(width), _height(height) {}
 
-        void set_data(void* data, uint32_t size, int width) override;
+        void set_data(YUYVImagePacket& packet) override;
 
         inline int width() const override { return _width; }
         inline int height() const override { return _height; }
@@ -57,7 +55,7 @@ namespace ravine
     public:
         CroppedFrameBuffer(CropWindow* win) : _win(win), FrameBuffer(win->length()) {}
 
-        void set_data(void* data, uint32_t size, int width) override;
+        void set_data(YUYVImagePacket& packet) override;
 
         inline int width() const override { return _win->width; }
         inline int height() const override { return _win->height; }
