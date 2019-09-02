@@ -1,5 +1,5 @@
-#ifndef RAVINE_BUFFER_PACKET_HPP_
-#define RAVINE_BUFFER_PACKET_HPP_
+#ifndef RAVINE_PACKETS_HPP_
+#define RAVINE_PACKETS_HPP_
 
 #include <cinttypes>
 #include "ravine_packet_base.hpp"
@@ -13,9 +13,9 @@ namespace RVN
     {
     public:
         BufferPacket(T* data, length_t length) : Packet<T*>(data), _length(length) {}
-        BufferPacket() : _length(0), _data(nullptr) {}
+        BufferPacket() : _length(0), Packet<T*>(nullptr) {}
         inline length_t length() { return _length; }
-        inline bool is_empty() { return _data == nullptr; }
+        inline bool is_empty() { return this->_data == nullptr; }
     protected:
         length_t _length;
     };

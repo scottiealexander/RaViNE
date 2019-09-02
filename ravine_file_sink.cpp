@@ -13,7 +13,7 @@
 namespace RVN
 {
     /* ====================================================================== */
-    inline Framebuffer* pop_queue(std::queue<FrameBuffer*>& q)
+    inline FrameBuffer* pop_queue(std::queue<FrameBuffer*>& q)
     {
         FrameBuffer* ptr = q.front();
         q.pop();
@@ -83,14 +83,14 @@ namespace RVN
         return true;
     }
     /* ---------------------------------------------------------------------- */
-    bool FileSink::process(YUYVImagePacket& packet)
+    void FileSink::process(YUYVImagePacket& packet)
     {
         // wait for use of the queue, this function needs to return asap
         // so as not to block the frame acqusition thread, so no sleep
         while (wait_flag(_qin_busy)) {/* spin until queue is available */}
 
         // no buffers are available, drop the frame...
-        if (_qin.size() < 1) { return false; }
+        if (_qin.size() < 1) { return; }
 
         FrameBuffer* ptr = pop_queue(_qin);
         release_flag(_qin_busy);
@@ -102,13 +102,11 @@ namespace RVN
         while (wait_flag(_qout_busy)) {/* spin */}
         _qout.push(ptr);
         release_flag(_qout_busy);
-
-        return true;
     }
     /* ---------------------------------------------------------------------- */
     void FileSink::allocate_buffers(int n)
     {
-        bool full = _win.x == 0 || _win.y == 0;
+        bool full = _win.col == 0 && _win.row == 0;
 
         for (int k = 0; k < n; ++k)
         {
@@ -143,7 +141,7 @@ namespace RVN
         while (persist())
         {
             // wait until the queue is available (does not imply that there is a new buffer)
-            while (wait_flag(_qout))
+            while (wait_flag(_qout_busy))
             {
                 // sleeping here has little cost, so allow OS to do other things
                 // (like acquire frames...)
@@ -154,24 +152,24 @@ namespace RVN
             if (_qout.size() > 0)
             {
                 FrameBuffer* ptr = pop_queue(_qout);
-                release_flag(_qout);
+                release_flag(_qout_busy);
 
                 if (next_file())
                 {
-                    _file << "P5" << std::endl << width << " " << height << std::endl << "255" << std::endl;
-                    _file.write(buffer, width*height);
+                    _file << "P5" << std::endl << ptr->width() << " " << ptr->height() << std::endl << "255" << std::endl;
+                    _file.write(reinterpret_cast<char*>(ptr->data()), ptr->length());
                     _file.close();
                 }
 
                 // reuse the FrameBuffer once _qin is free
-                while (wait_flag(_qin)) { sleep_ms(1); }
+                while (wait_flag(_qin_busy)) { sleep_ms(1); }
                 _qin.push(ptr);
-                release_flag(_qin);
+                release_flag(_qin_busy);
             }
             else
             {
                 // no buffer ready for writing, release _qout
-                release_flag(_qout);
+                release_flag(_qout_busy);
 
                 // queue is empty, might as well actually wait
                 sleep_ms(10);

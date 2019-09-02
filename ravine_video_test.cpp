@@ -17,6 +17,7 @@
 #include <string.h>
 #include <time.h>
 
+#include "ravine_utils.hpp"
 #include "ravine_video_source.hpp"
 #include "ravine_image_utils.hpp"
 
@@ -44,13 +45,15 @@ int main()
 
     int fd = source.get_fd();
 
+    printf("fd = %d\n", fd);
+
     // 4. Request Buffers from the device
     v4l2_requestbuffers requestBuffer = {0};
     requestBuffer.count = 1; // one request buffer
     requestBuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE; // request a buffer wich we an use for capturing frames
     requestBuffer.memory = V4L2_MEMORY_MMAP;
 
-    if(ioctl(fd, VIDIOC_REQBUFS, &requestBuffer) < 0)
+    if(RVN::xioctl(fd, VIDIOC_REQBUFS, &requestBuffer) < 0)
     {
         perror("Could not request buffer from device, VIDIOC_REQBUFS");
         return 1;
@@ -63,7 +66,7 @@ int main()
     queryBuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     queryBuffer.memory = V4L2_MEMORY_MMAP;
     queryBuffer.index = 0;
-    if(ioctl(fd, VIDIOC_QUERYBUF, &queryBuffer) < 0)
+    if(RVN::xioctl(fd, VIDIOC_QUERYBUF, &queryBuffer) < 0)
     {
         perror("Device did not return the buffer information, VIDIOC_QUERYBUF");
         return 1;
@@ -85,9 +88,20 @@ int main()
     bufferinfo.memory = V4L2_MEMORY_MMAP;
     bufferinfo.index = 0;
 
+    // Queue the buffer
+    if(RVN::xioctl(fd, VIDIOC_QBUF, &bufferinfo) < 0)
+    {
+        perror("Could not queue buffer, VIDIOC_QBUF");
+        return 1;
+    }
+
+    printf("Sleeping...");
+    sleep_ms(1000);
+    printf(" DONE!\n");
+
     // Activate streaming
     int type = bufferinfo.type;
-    if(ioctl(fd, VIDIOC_STREAMON, &type) < 0)
+    if(RVN::xioctl(fd, VIDIOC_STREAMON, &type) < 0)
     {
         perror("Could not start streaming, VIDIOC_STREAMON");
         return 1;
@@ -98,31 +112,30 @@ int main()
     float dur = 0.0f;
     int32_t nframe = 0;
 
-    for (int32_t k = 0; k < 30; ++k)
+    for (int32_t k = 0; k < 10; ++k)
     {
         struct timespec t1, t2;
-        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t1);
-
-        // Queue the buffer
-        if(ioctl(fd, VIDIOC_QBUF, &bufferinfo) < 0)
-        {
-            printf("[INFO]: failed to queue buffer for frame %d\n", k);
-            continue;
-            // perror("Could not queue buffer, VIDIOC_QBUF");
-            // return 1;
-        }
+        clock_gettime(CLOCK_MONOTONIC, &t1);
 
         // Dequeue the buffer
-        if(ioctl(fd, VIDIOC_DQBUF, &bufferinfo) < 0)
+        if(RVN::xioctl(fd, VIDIOC_DQBUF, &bufferinfo) < 0)
         {
             printf("[INFO]: dropped frame %d\n", k);
-            continue;
-            // perror("Could not dequeue the buffer, VIDIOC_DQBUF");
+            perror("Could not dequeue the buffer, VIDIOC_DQBUF");
+            break;
             // return 1;
         }
         // Frames get written after dequeuing the buffer
 
-        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t2);
+        if(RVN::xioctl(fd, VIDIOC_QBUF, &bufferinfo) < 0)
+        {
+            printf("[INFO]: failed to queue buffer for frame %d\n", k);
+            perror("Could not queue buffer, VIDIOC_QBUF");
+            break;
+            // return 1;
+        }
+
+        clock_gettime(CLOCK_MONOTONIC, &t2);
 
         nframe += 1;
 
@@ -146,6 +159,7 @@ int main()
     }
 
     free(img);
+    munmap((void*)buffer, queryBuffer.length);
 
     cout << "Elapsed time: " << dur / nframe << " milliseconds" << endl;
 
@@ -153,7 +167,7 @@ int main()
 /******************************** end looping here **********************/
 
     // end streaming
-    if(ioctl(fd, VIDIOC_STREAMOFF, &type) < 0)
+    if(RVN::xioctl(fd, VIDIOC_STREAMOFF, &type) < 0)
     {
         perror("Could not end streaming, VIDIOC_STREAMOFF");
         return 1;

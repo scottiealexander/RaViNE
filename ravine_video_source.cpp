@@ -46,7 +46,7 @@ namespace RVN
             void* ptr = mmap(
                 nullptr,                // start anywhere
                 length,
-                PROT_READ | PROT_WRITE  // required
+                PROT_READ | PROT_WRITE, // required
                 MAP_SHARED,             // recommended
                 fd,
                 offset
@@ -151,6 +151,10 @@ namespace RVN
             printf("           using %f fps instead\n", actual_framerate);
             printf("**************************************************\n");
         }
+        else
+        {
+            printf("[INFO]: framerate set to %f fps\n", actual_framerate);
+        }
 
         return success;
     }
@@ -167,7 +171,7 @@ namespace RVN
 
         streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-        if (xioctl(fd, VIDIOC_G_PARM, &streamparm) < 0)
+        if (xioctl(_fd, VIDIOC_G_PARM, &streamparm) < 0)
         {
             set_error_msg("Failed to get stream param");
             return false;
@@ -181,7 +185,7 @@ namespace RVN
             tpf.numerator = 1;
             tpf.denominator = req;
 
-            if (xioctl(fd, VIDIOC_S_PARM, &streamparm) < 0)
+            if (xioctl(_fd, VIDIOC_S_PARM, &streamparm) < 0)
             {
                 set_error_msg("Failed to set stream param");
                 return false;
@@ -242,7 +246,7 @@ namespace RVN
                 buf.memory = V4L2_MEMORY_MMAP;
                 buf.index = k;
 
-                if (xioctl(fd, VIDIOC_QUERYBUF, &buf) < 0)
+                if (xioctl(_fd, VIDIOC_QUERYBUF, &buf) < 0)
                 {
                     set_error_msg("Failed to query buffers");
                     success = false;
@@ -315,7 +319,7 @@ namespace RVN
 
             if (xioctl(_fd, VIDIOC_STREAMON, &type) < 0)
             {
-                set_error_message("Failed to start streaming");
+                set_error_msg("Failed to start streaming");
                 success = false;
             }
             else
@@ -340,7 +344,7 @@ namespace RVN
         timeout.tv_sec = 2;
         timeout.tv_usec = 0;
 
-        if !(_sink->open_stream())
+        if (!_sink->open_stream())
         {
             set_error_msg("Failed to open sink stream");
             return;
@@ -355,7 +359,7 @@ namespace RVN
 
             while (!frame_ready)
             {
-                int r = select(_fd + 1, &fds, NULL, NULL, &tv);
+                int r = select(_fd + 1, &fds, NULL, NULL, &timeout);
 
                 if (r == 0)
                 {
@@ -388,7 +392,7 @@ namespace RVN
                 buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
                 buf.memory = V4L2_MEMORY_MMAP;
 
-                if (xioctl(fd, VIDIOC_DQBUF, &buf) < 0)
+                if (xioctl(_fd, VIDIOC_DQBUF, &buf) < 0)
                 {
                     //failed to dequeue frame
                     if (errno != EAGAIN)
@@ -407,7 +411,7 @@ namespace RVN
                     // send to sink (this should be synchronous but fast)
                     _sink->process(_buffers[buf.index]);
 
-                    if (xioctl(fd, VIDIOC_QBUF, &buf) < 0)
+                    if (xioctl(_fd, VIDIOC_QBUF, &buf) < 0)
                     {
                         // NOTE TODO FIXME: what do we do here?
                         // failed to re-queue the frame

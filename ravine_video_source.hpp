@@ -14,14 +14,17 @@
 
 #define CLEAR(x) (memset(&(x), 0, sizeof(x)))
 
-namespace RNV
+namespace RVN
 {
+    int xioctl(int fh, int request, void *arg);
     /* =======================================================================*/
     class MMBuffer : public YUYVImagePacket
     {
+    public:
+        MMBuffer() {}
         MMBuffer(int, uint32_t, uint32_t);
         ~MMBuffer();
-        inline void set_width(int width) { _width = width; }
+        inline void set_width(int width) { this->_width = width; }
     };
 
     using BufferVec = std::vector<MMBuffer>;

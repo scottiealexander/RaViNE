@@ -8,9 +8,9 @@
 
 #include <cinttypes>
 
-#include "ravine_buffer.hpp"
+#include "ravine_frame_buffer.hpp"
 #include "ravine_packets.hpp"
-#incoude "ravine_sink_base.hpp"
+#include "ravine_sink_base.hpp"
 
 namespace RVN
 {
@@ -23,7 +23,7 @@ namespace RVN
 
         bool open_stream() override;
         bool close_stream() override;
-        bool process(YUYVImagePacket& packet) override;
+        void process(YUYVImagePacket& packet) override;
 
     private:
         void init(int n);

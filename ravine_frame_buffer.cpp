@@ -16,11 +16,11 @@ namespace RVN
     {
         int32_t inc = 0;
 
-        int32_t end = min(_length*2, size);
+        int32_t end = min(_length*2, this->length());
 
         // copy from input packet to internal storage
         uint8_t* data_in = packet.data();
-        uint8_t* data = data();
+        uint8_t* data = this->data();
 
         // +=2 for YUYV encoding
         for (uint32_t k = 0; k < end; k += 2, ++inc)
@@ -37,14 +37,14 @@ namespace RVN
         int row_length = packet.width() * 2;
 
         uint8_t* data_in = packet.data();
-        uint8_t* data = data();
+        uint8_t* data = this->data();
 
         for (int k = _win->row; k < _win->height; ++k)
         {
             for (int j = (_win->col * 2); j < (_win->width*2); j+=2, ++inc)
             {
                 int32_t idx = (k * row_length + j);
-                if (idx < size)
+                if (idx < this->length())
                 {
                     data[inc] = data_in[idx];
                 }

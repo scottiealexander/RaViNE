@@ -20,12 +20,12 @@ namespace RVN
         int row;
         int width;
         int height;
-    }
+    };
     /* ====================================================================== */
     class FrameBuffer : public BufferPacket<uint8_t>
     {
     public:
-        FrameBuffer::FrameBuffer(length_t length) :
+        FrameBuffer(length_t length) :
             BufferPacket<uint8_t>(new uint8_t[length], length) {}
         ~FrameBuffer();
 
