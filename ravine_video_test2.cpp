@@ -4,10 +4,10 @@
 #include "ravine_utils.hpp"
 #include "ravine_video_source.hpp"
 
-#define FRAMERATE 5
+#define FRAMERATE 15
 
 #define MICROSECONDS 1000000
-#define WIDTH 360
+#define WIDTH 320
 #define HEIGHT 240
 
 /* ========================================================================= */
@@ -31,12 +31,6 @@ int main()
         return -1;
     }
 
-    //if (source.isvalid())
-    //{
-        //printf("Source appears to be valid...\n");
-        //return 0;
-    //}
-
     if (!source.start_stream())
     {
         printf("[ERROR]: failed to start stream\n");
@@ -44,21 +38,13 @@ int main()
         return -1;
     }
 
-    sleep_ms(1000);
+    sleep_ms(5000);
 
-    if (source.isvalid())
+    if (!source.stop_stream())
     {
-        if (!source.stop_stream())
-        {
-            printf("[ERROR]: failed to start stream\n");
-            printf("[MSG]: %s\n", source.get_error_msg().c_str());
-            return -1;
-        }
-    }
-    else
-    {
-        printf("[ERROR]: error while streaming\n");
+        printf("[ERROR]: error during streaming\n");
         printf("[MSG]: %s\n", source.get_error_msg().c_str());
+        source.close_stream();
         return -1;
     }
 

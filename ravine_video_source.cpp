@@ -455,6 +455,8 @@ namespace RVN
             }
         }
 
+        printf("[INFO]: buffers appear to be queued\n");
+
         if (isvalid())
         {
             v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -465,6 +467,14 @@ namespace RVN
             }
             else
             {
+                printf("[INFO]: launching stream\n");
+
+                // by calling persist() we set the _state_continue flag to true
+                // (reguardless of it's current state which should start false)
+                // so that V4L2::stream will wait for the stop signal (seting
+                // _state_continue to false)
+                persist();
+
                 // launch the actual frame stream
                 _stream_thread = std::thread(&V4L2::stream, this);
             }
@@ -478,12 +488,11 @@ namespace RVN
         if (!isvalid()) { return; }
 
         fd_set fds;
-        FD_ZERO(&fds);
-        FD_SET(_fd, &fds);
 
         timeval timeout;
-        timeout.tv_sec = 2;
+        timeout.tv_sec = 5;
         timeout.tv_usec = 0;
+
 #ifndef DEBUG
         if (!_sink->open_stream())
         {
@@ -491,18 +500,25 @@ namespace RVN
             return;
         }
 #else
+        printf("[INFO]: allocating copy gray buffer, %d x %d\n", _width, _height);
         uint8_t* gray = new uint8_t[_width*_height];
+        printf("[INFO]: success allocating gray\n");
         int kframe = 0;
 #endif
         bool error = false;
         std::string err_msg;
 
-        while (persist() && !error)
+        printf("[INFO]: entering main stream loop\n");
+        while (persist() && (!error) && (kframe < 5))
         {
             bool frame_ready = false;
 
+            printf("[INFO]: waiting for next frame\n");
             while (!frame_ready)
             {
+                FD_ZERO(&fds);
+                FD_SET(_fd, &fds);
+
                 int r = select(_fd + 1, &fds, NULL, NULL, &timeout);
 
                 if (r == 0)
@@ -531,6 +547,8 @@ namespace RVN
 
             if (frame_ready)
             {
+                printf("[INFO]: got frame %d\n", kframe);
+
                 v4l2_buffer buf = {};
 
                 buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -548,6 +566,8 @@ namespace RVN
                 }
                 else if (buf.index < _buffers.size())
                 {
+                    printf("[INFO]: appears we have a valid buffer at %d\n", buf.index);
+
                     // in a YUYV frame, every other sample is luminance, so
                     // total bytes is width x height x 2, so we send width and
                     // bytesused
@@ -555,13 +575,22 @@ namespace RVN
                     // send to sink (this should be synchronous but fast)
                     //send_sink(_buffers[buf.index]);
 #else
-                    yuv422_to_gray(_buffers[buf.index]->data(), _width, _height, gray);
-                    normalize(gray, _width, _height);
+                    printf("[INFO]: converting yuyv to gray\n");
+                    if (_buffers[buf.index]->data() == nullptr)
+                    {
+                        printf("[ERROR]: buffer data appear to be null\n");
+                    }
+                    else
+                    {
+                        yuv422_to_gray(_buffers[buf.index]->data(), _width, _height, gray);
+                        normalize(gray, _width, _height);
 
-                    char ofile[32] = {'\0'};
-                    sprintf(ofile, "./frames/frame-%03d.pgm", kframe);
-                    write_pgm(gray, _width, _height, ofile);
-                    ++kframe;
+                        printf("[INFO]: writing frame to file\n");
+                        char ofile[32] = {'\0'};
+                        sprintf(ofile, "./frames/frame-%03d.pgm", kframe);
+                        write_pgm(gray, _width, _height, ofile);
+                        ++kframe;
+                    }
 #endif
 
                     if (xioctl(_fd, VIDIOC_QBUF, &buf) < 0)
@@ -577,10 +606,17 @@ namespace RVN
 
         if (error)
         {
+            printf("[INFO]: an error occured during streaming, will report\n");
             set_error_msg(err_msg);
         }
+        else
+        {
+            printf("[INFO]: ending stream\n");
+        }
 
-        _sink->close_stream();
+#ifndef DEBUG
+        //_sink->close_stream();
+#endif
     }
     /* ---------------------------------------------------------------------- */
     bool V4L2::stop_stream()
