@@ -16,14 +16,14 @@ namespace RVN
     {
         int32_t inc = 0;
 
-        int32_t end = min(_length*2, this->length());
+        int32_t end = RVN_MIN(_length*2, this->length());
 
         // copy from input packet to internal storage
         uint8_t* data_in = packet.data();
         uint8_t* data = this->data();
 
         // +=2 for YUYV encoding
-        for (uint32_t k = 0; k < end; k += 2, ++inc)
+        for (int32_t k = 0; k < end; k += 2, ++inc)
         {
             data[inc] = data_in[k];
         }

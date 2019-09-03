@@ -65,43 +65,56 @@ namespace RVN
     {
         _state_continue.test_and_set();
         allocate_buffers(nbuff);
+        _open = false;
+        _frame = 0;
     }
     /* ---------------------------------------------------------------------- */
     bool FileSink::open_stream()
     {
         if (_qin.size() < 1) { return false; }
 
-        _write_thread = std::thread(&FileSink::write_loop, this);
+        if (!is_open())
+        {
+            _write_thread = std::thread(&FileSink::write_loop, this);
+            _open = true;
+        }
         return true;
     }
     /* ---------------------------------------------------------------------- */
     bool FileSink::close_stream()
     {
-        // set "continue" flag to false
-        _state_continue.clear();
-        _write_thread.join();
+        if (is_open())
+        {
+            // set "continue" flag to false
+            _state_continue.clear();
+            _write_thread.join();
+            _open = false;
+        }
         return true;
     }
     /* ---------------------------------------------------------------------- */
     void FileSink::process(YUYVImagePacket& packet)
     {
-        // wait for use of the queue, this function needs to return asap
-        // so as not to block the frame acqusition thread, so no sleep
-        while (wait_flag(_qin_busy)) {/* spin until queue is available */}
+        if (is_open())
+        {
+            // wait for use of the queue, this function needs to return asap
+            // so as not to block the frame acqusition thread, so no sleep
+            while (wait_flag(_qin_busy)) {/* spin until queue is available */}
 
-        // no buffers are available, drop the frame...
-        if (_qin.size() < 1) { return; }
+            // no buffers are available, drop the frame...
+            if (_qin.size() < 1) { return; }
 
-        FrameBuffer* ptr = pop_queue(_qin);
-        release_flag(_qin_busy);
+            FrameBuffer* ptr = pop_queue(_qin);
+            release_flag(_qin_busy);
 
-        // copy data, no alloc / free
-        ptr->set_data(packet);
+            // copy data, no alloc / free
+            ptr->set_data(packet);
 
-        // again, no sleep to stay quick
-        while (wait_flag(_qout_busy)) {/* spin */}
-        _qout.push(ptr);
-        release_flag(_qout_busy);
+            // again, no sleep to stay quick
+            while (wait_flag(_qout_busy)) {/* spin */}
+            _qout.push(ptr);
+            release_flag(_qout_busy);
+        }
     }
     /* ---------------------------------------------------------------------- */
     void FileSink::allocate_buffers(int n)

@@ -12,6 +12,8 @@
 #include "ravine_source_base.hpp"
 #include "ravine_packets.hpp"
 
+// conversion factor b/t milliseconds and v4l2 100us exposure units
+#define V4L2_TIME_MS 10
 #define CLEAR(x) (memset(&(x), 0, sizeof(x)))
 
 namespace RVN
@@ -24,20 +26,23 @@ namespace RVN
         MMBuffer() {}
         MMBuffer(int, uint32_t, uint32_t);
         ~MMBuffer();
+        void operator=(const RVN::MMBuffer&);
+
         inline void set_width(int width) { this->_width = width; }
     };
 
-    using BufferVec = std::vector<MMBuffer>;
+    using BufferVec = std::vector<MMBuffer*>;
     /* =======================================================================*/
     class V4L2 : public Source<YUYVImagePacket>
     {
     public:
         V4L2(const char*, int, int, int);
+        ~V4L2();
 
-        bool open_stream();
-        bool start_stream();
-        bool stop_stream();
-        bool close_stream();
+        bool open_stream() override;
+        bool start_stream() override;
+        bool stop_stream() override;
+        bool close_stream() override;
 
         bool initialize_buffers(int count = 8);
 
@@ -45,16 +50,29 @@ namespace RVN
         inline bool isvalid() const { return _isvalid; }
         inline int buffer_count() const { return _buffers.size(); }
 
-        inline int get_fd() { return _fd; }
+        inline int get_fd() const { return _fd; }
+
+        bool set_hardware_crop(int left, int top, int width, int height);
+        bool set_hardware_crop(const CropWindow& win);
 
     private:
+        bool verify_capabilities();
+        bool set_pixel_format();
         bool set_framerate(int, float&);
+        bool set_exposure(float);
+
         void stream();
 
         inline void set_error_msg(const std::string& msg)
         {
             _err_msg = msg;
             _isvalid = false;
+        }
+
+        inline void reset_error_state()
+        {
+            _err_msg.clear();
+            _isvalid = true;
         }
 
         inline bool persist()

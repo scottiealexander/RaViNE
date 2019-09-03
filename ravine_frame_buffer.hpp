@@ -5,31 +5,17 @@
 
 #include "ravine_packets.hpp"
 
-#define min(x, y) ((x) < (y) ? (x) : (y))
-
 namespace RVN
 {
-    /* ====================================================================== */
-    struct CropWindow
-    {
-        inline length_t length() const
-        {
-            return ((length_t)width) * ((length_t)height);
-        }
-        int col;
-        int row;
-        int width;
-        int height;
-    };
     /* ====================================================================== */
     class FrameBuffer : public BufferPacket<uint8_t>
     {
     public:
         FrameBuffer(length_t length) :
             BufferPacket<uint8_t>(new uint8_t[length], length) {}
-        ~FrameBuffer();
+        virtual ~FrameBuffer();
 
-        virtual void set_data(YUYVImagePacket& packet) {};
+        virtual void set_data(YUYVImagePacket& packet) = 0;
         virtual int width() const { return 0; };
         virtual int height() const { return 0; };
     };
@@ -53,7 +39,8 @@ namespace RVN
     class CroppedFrameBuffer : public FrameBuffer
     {
     public:
-        CroppedFrameBuffer(CropWindow* win) : _win(win), FrameBuffer(win->length()) {}
+        CroppedFrameBuffer(CropWindow* win) :
+            FrameBuffer(win->length()), _win(win) {}
 
         void set_data(YUYVImagePacket& packet) override;
 

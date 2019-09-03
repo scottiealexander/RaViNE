@@ -25,6 +25,8 @@ namespace RVN
         bool close_stream() override;
         void process(YUYVImagePacket& packet) override;
 
+        inline bool is_open() { return _open; }
+
     private:
         void init(int n);
         void allocate_buffers(int n);
@@ -38,6 +40,7 @@ namespace RVN
 
     private:
         int _frame;
+        bool _open;
         std::ofstream _file;
 
         std::atomic_flag _state_continue = ATOMIC_FLAG_INIT;

@@ -48,7 +48,7 @@ int main()
     printf("fd = %d\n", fd);
 
     // 4. Request Buffers from the device
-    v4l2_requestbuffers requestBuffer = {0};
+    v4l2_requestbuffers requestBuffer = {};
     requestBuffer.count = 1; // one request buffer
     requestBuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE; // request a buffer wich we an use for capturing frames
     requestBuffer.memory = V4L2_MEMORY_MMAP;
@@ -62,7 +62,7 @@ int main()
 
     // 5. Query the buffer to get raw data ie. ask for the you requested buffer
     // and allocate memory for it
-    v4l2_buffer queryBuffer = {0};
+    v4l2_buffer queryBuffer = {};
     queryBuffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     queryBuffer.memory = V4L2_MEMORY_MMAP;
     queryBuffer.index = 0;
