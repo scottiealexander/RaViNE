@@ -17,7 +17,9 @@
 
 #include <linux/videodev2.h>
 
-#define DEBUG
+#ifdef DEBUG
+#undef DEBUF
+#endif
 
 #ifdef DEBUG
 #include "ravine_image_utils.hpp"
@@ -500,19 +502,21 @@ namespace RVN
             set_error_msg("Failed to open sink stream");
             return;
         }
+        printf("[INFO]: sink stream is open\n");
 #else
         printf("[INFO]: allocating copy gray buffer, %d x %d\n", _width, _height);
         uint8_t* gray = new uint8_t[_width*_height];
         printf("[INFO]: success allocating gray\n");
-        int kframe = 0;
 #endif
+
+        int kframe = 0;
         bool error = false;
         std::string err_msg;
 
         timespec t1, t2;
 
         printf("[INFO]: entering main stream loop\n");
-        while (persist() && (!error) && (kframe < 5))
+        while (persist() && (!error))
         {
             bool frame_ready = false;
 
@@ -545,10 +549,7 @@ namespace RVN
                     {
                         clock_gettime(CLOCK_MONOTONIC, &t1);
                     }
-                    else if (kframe == 4)
-                    {
-                        clock_gettime(CLOCK_MONOTONIC, &t2);
-                    }
+
                     break;
                 }
 
@@ -584,14 +585,16 @@ namespace RVN
                     // bytesused
 #ifndef DEBUG
                     // send to sink (this should be synchronous but fast)
-                    //send_sink(_buffers[buf.index]);
+                    printf("[INFO]: forwrding buffer to sink...\n");
+                    send_sink(_buffers[buf.index], buf.bytesused);
+                    ++kframe;
 #else
                     printf("[INFO]: converting yuyv to gray\n");
                     if (_buffers[buf.index]->data() == nullptr)
                     {
                         printf("[ERROR]: buffer data appear to be null\n");
                     }
-                    else
+                    else if (buf.bytesused >= (_width*_height*2))
                     {
                         yuv422_to_gray(_buffers[buf.index]->data(), _width, _height, gray);
                         normalize(gray, _width, _height);
@@ -601,6 +604,11 @@ namespace RVN
                         sprintf(ofile, "./frames/frame-%03d.pgm", kframe);
                         write_pgm(gray, _width, _height, ofile);
                         ++kframe;
+                    }
+                    else
+                    {
+                        printf("[ERROR]: received incomplete frame: %d of %d\n",
+                            buf.bytesused, _width*_height*2);
                     }
 #endif
 
@@ -614,6 +622,8 @@ namespace RVN
                 }
             }
         }
+
+        clock_gettime(CLOCK_MONOTONIC, &t2);
 
         if (error)
         {
@@ -629,7 +639,10 @@ namespace RVN
         }
 
 #ifndef DEBUG
-        //_sink->close_stream();
+        _sink->close_stream();
+        printf("[INFO]: closed sink stream\n");
+#else
+        delete[] gray;
 #endif
     }
     /* ---------------------------------------------------------------------- */

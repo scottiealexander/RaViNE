@@ -3,6 +3,7 @@
 
 #include "ravine_utils.hpp"
 #include "ravine_video_source.hpp"
+#include "ravine_file_sink.hpp"
 
 #define FRAMERATE 15
 
@@ -31,6 +32,16 @@ int main()
         return -1;
     }
 
+    RVN::FileSink sink(WIDTH, HEIGHT, 4);
+
+    source.register_sink(&sink);
+
+    if (!source.has_valid_sink())
+    {
+        printf("[ERROR]: failed to register sink with source\n");
+        return -1;
+    }
+
     if (!source.start_stream())
     {
         printf("[ERROR]: failed to start stream\n");
@@ -38,7 +49,7 @@ int main()
         return -1;
     }
 
-    sleep_ms(5000);
+    sleep_ms(3000);
 
     if (!source.stop_stream())
     {

@@ -23,7 +23,7 @@ namespace RVN
 
         bool open_stream() override;
         bool close_stream() override;
-        void process(YUYVImagePacket* packet) override;
+        void process(YUYVImagePacket* packet, length_t bytes) override;
 
         inline bool is_open() { return _open; }
 
@@ -32,6 +32,7 @@ namespace RVN
         void allocate_buffers(int n);
         bool next_file();
         void write_loop();
+        void write_file(FrameBuffer* buf);
 
         inline bool persist()
         {

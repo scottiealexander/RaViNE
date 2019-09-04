@@ -25,11 +25,11 @@ namespace RVN
         inline bool has_valid_sink() { return _sink != nullptr; }
 
     protected:
-        inline void send_sink(PacketType& packet)
+        inline void send_sink(PacketType* packet, uint32_t bytes)
         {
             if (has_valid_sink())
             {
-                _sink->process(packet);
+                _sink->process(packet, bytes);
             }
         }
 
