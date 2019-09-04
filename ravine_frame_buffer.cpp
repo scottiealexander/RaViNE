@@ -12,14 +12,14 @@ namespace RVN
         }
     }
     /* ====================================================================== */
-    void FullFrameBuffer::set_data(YUYVImagePacket& packet)
+    void FullFrameBuffer::set_data(YUYVImagePacket* packet)
     {
         int32_t inc = 0;
 
-        int32_t end = RVN_MIN(_length*2, this->length());
+        int32_t end = RVN_MIN(this->length()*2, packet->length());
 
         // copy from input packet to internal storage
-        uint8_t* data_in = packet.data();
+        uint8_t* data_in = packet->data();
         uint8_t* data = this->data();
 
         // +=2 for YUYV encoding
@@ -29,14 +29,14 @@ namespace RVN
         }
     }
     /* ====================================================================== */
-    void CroppedFrameBuffer::set_data(YUYVImagePacket& packet)
+    void CroppedFrameBuffer::set_data(YUYVImagePacket* packet)
     {
         int32_t inc = 0;
 
         // in YUYV, every other element is luminance channel
-        int row_length = packet.width() * 2;
+        int row_length = packet->width() * 2;
 
-        uint8_t* data_in = packet.data();
+        uint8_t* data_in = packet->data();
         uint8_t* data = this->data();
 
         for (int k = _win->row; k < _win->height; ++k)
