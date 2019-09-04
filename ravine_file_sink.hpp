@@ -23,7 +23,7 @@ namespace RVN
 
         bool open_stream() override;
         bool close_stream() override;
-        void process(YUYVImagePacket& packet) override;
+        void process(YUYVImagePacket* packet) override;
 
         inline bool is_open() { return _open; }
 

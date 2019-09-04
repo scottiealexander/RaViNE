@@ -15,7 +15,7 @@ namespace RVN
             BufferPacket<uint8_t>(new uint8_t[length], length) {}
         virtual ~FrameBuffer();
 
-        virtual void set_data(YUYVImagePacket& packet) = 0;
+        virtual void set_data(YUYVImagePacket* packet) = 0;
         virtual int width() const { return 0; };
         virtual int height() const { return 0; };
     };
@@ -26,7 +26,7 @@ namespace RVN
         FullFrameBuffer(int width, int height) :
             FrameBuffer(width*height), _width(width), _height(height) {}
 
-        void set_data(YUYVImagePacket& packet) override;
+        void set_data(YUYVImagePacket* packet) override;
 
         inline int width() const override { return _width; }
         inline int height() const override { return _height; }
@@ -42,7 +42,7 @@ namespace RVN
         CroppedFrameBuffer(CropWindow* win) :
             FrameBuffer(win->length()), _win(win) {}
 
-        void set_data(YUYVImagePacket& packet) override;
+        void set_data(YUYVImagePacket*packet) override;
 
         inline int width() const override { return _win->width; }
         inline int height() const override { return _win->height; }

@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <time.h>
 
 #include <linux/videodev2.h>
 
@@ -508,6 +509,8 @@ namespace RVN
         bool error = false;
         std::string err_msg;
 
+        timespec t1, t2;
+
         printf("[INFO]: entering main stream loop\n");
         while (persist() && (!error) && (kframe < 5))
         {
@@ -538,6 +541,14 @@ namespace RVN
                 else if (r > 0)
                 {
                     frame_ready = true;
+                    if (kframe == 0)
+                    {
+                        clock_gettime(CLOCK_MONOTONIC, &t1);
+                    }
+                    else if (kframe == 4)
+                    {
+                        clock_gettime(CLOCK_MONOTONIC, &t2);
+                    }
                     break;
                 }
 
@@ -612,6 +623,9 @@ namespace RVN
         else
         {
             printf("[INFO]: ending stream\n");
+            float dur = (float)(t2.tv_sec - t1.tv_sec) * 1000.0f +
+                (float)(t2.tv_nsec - t1.tv_nsec) / 1000000.0f;
+            printf("[INFO]: got %d frames in %f ms\n", kframe, dur);
         }
 
 #ifndef DEBUG

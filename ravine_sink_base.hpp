@@ -9,7 +9,7 @@ namespace RVN
     public:
         virtual bool open_stream() = 0;
         virtual bool close_stream() = 0;
-        virtual void process(PacketType&) = 0;
+        virtual void process(PacketType*) = 0;
     };
 }
 

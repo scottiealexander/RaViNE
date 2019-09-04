@@ -93,7 +93,7 @@ namespace RVN
         return true;
     }
     /* ---------------------------------------------------------------------- */
-    void FileSink::process(YUYVImagePacket& packet)
+    void FileSink::process(YUYVImagePacket* packet)
     {
         if (is_open())
         {
