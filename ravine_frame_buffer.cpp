@@ -36,15 +36,12 @@ namespace RVN
         // in YUYV, every other element is luminance channel
         const int row_length = packet->width() * 2;
 
-        printf("[INFO]: bytes = %d, row_length = %d\n", bytes, row_length);
-
         const uint8_t* data_in = packet->data();
         uint8_t* data = this->data();
 
         int first_col = _win->col * 2;
         int last_col = first_col + (_win->width*2);
 
-        printf("[INFO]: first_col = %d, last_col = %d\n", first_col, last_col);
         int last_row = _win->row + _win->height;
 
         for (int k = _win->row; k < last_row; ++k)
@@ -56,12 +53,7 @@ namespace RVN
                 {
                     data[inc] = data_in[idx];
                 }
-                else
-                {
-                    printf("[ERROR]: idx out of range: %d\n", idx);
-                }
             }
-            printf("inc = %d, k = %d\n", inc, k);
         }
     }
     /* ====================================================================== */
