@@ -313,7 +313,7 @@ namespace RVN
         {
             if (errno == ENODATA)
             {
-                set_error_msg("Camera does NOT support hardware cropping");
+                set_error_msg("Camera does NOT support hardware cropping: 1");
             }
             else
             {
@@ -324,14 +324,17 @@ namespace RVN
         {
             v4l2_crop crop = {};
             crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+            crop.c = cap.defrect;
 
             // query the default cropping setting to get the crop bounds
             if (xioctl(_fd, VIDIOC_G_CROP, &crop) < 0)
             {
                 if (errno == EINVAL)
                 {
-                    // this should never happen, given the above, right?
-                    set_error_msg("Camera does NOT support hardware cropping");
+                    // this should never happen, given the above, right?, but it
+                    // does as CROPCAP doesn't (in practice) error if cropping
+                    // isn't supported
+                    set_error_msg("Camera does NOT support hardware cropping: 2");
                 }
                 else
                 {
@@ -350,6 +353,7 @@ namespace RVN
                 if (xioctl(_fd, VIDIOC_S_CROP, &crop) < 0)
                 {
                     set_error_msg("Failed to set cropping params");
+                    perror("MSG");
                 }
                 else
                 {

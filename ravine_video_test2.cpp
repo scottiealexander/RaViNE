@@ -2,6 +2,7 @@
 #include <chrono>
 
 #include "ravine_utils.hpp"
+#include "ravine_packets.hpp"
 #include "ravine_video_source.hpp"
 #include "ravine_file_sink.hpp"
 
@@ -12,7 +13,7 @@
 #define HEIGHT 240
 
 /* ========================================================================= */
-int main()
+int main(int narg, const char** args)
 {
     const char* dev = "/dev/video0";
 
@@ -32,7 +33,18 @@ int main()
         return -1;
     }
 
-    RVN::FileSink sink(WIDTH, HEIGHT, 4);
+    RVN::CropWindow crop;
+
+    if (narg < 2)
+    {
+        crop = {0, 0, WIDTH, HEIGHT};
+    }
+    else
+    {
+        crop = {20, 40, 300, 200};
+    }
+
+    RVN::FileSink sink(crop, 4);
 
     source.register_sink(&sink);
 
