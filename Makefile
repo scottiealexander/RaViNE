@@ -7,12 +7,12 @@ OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/app
 TARGET   := ravine
 INCLUDE  := -I./
-SRC      :=                              \
+SRC      :=                               \
 	$(wildcard ./ravine_video_source.cpp) \
 	$(wildcard ./ravine_file_sink.cpp)    \
 	$(wildcard ./ravine_frame_buffer.cpp) \
 	$(wildcard ./ravine_packets.cpp)      \
-	$(wildcard ./ravine_video_test2.cpp)   \
+	$(wildcard ./ravine_video_test2.cpp)  \
 
 OBJECTS := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 
@@ -31,6 +31,7 @@ $(APP_DIR)/$(TARGET): $(OBJECTS)
 build:
 	@mkdir -p $(APP_DIR)
 	@mkdir -p $(OBJ_DIR)
+	@mkdir -p $(APP_DIR)/frames
 
 debug: CXXFLAGS += -DDEBUG -g
 debug: all
