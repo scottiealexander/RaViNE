@@ -13,33 +13,6 @@
 namespace RVN
 {
     /* ====================================================================== */
-    inline FrameBuffer* pop_queue(std::queue<FrameBuffer*>& q)
-    {
-        FrameBuffer* ptr = q.front();
-        q.pop();
-        return ptr;
-    }
-    /* ---------------------------------------------------------------------- */
-    inline bool wait_flag(std::atomic_flag& f)
-    {
-        return f.test_and_set(std::memory_order_acquire);
-    }
-    /* ---------------------------------------------------------------------- */
-    inline void release_flag(std::atomic_flag& f) { f.clear(); }
-    /* ---------------------------------------------------------------------- */
-    void delete_queue(std::queue<FrameBuffer*> q)
-    {
-        for (int k = 0; k < q.size(); ++k)
-        {
-            FrameBuffer* tmp = pop_queue(q);
-            if (tmp != nullptr)
-            {
-                // proper deconstructor is the base class one
-                delete tmp;
-            }
-        }
-    }
-    /* ====================================================================== */
     FileSink::FileSink(const CropWindow& win, int nbuff) : _win(win)
     {
         init(nbuff);

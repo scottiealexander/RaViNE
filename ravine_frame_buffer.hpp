@@ -2,6 +2,7 @@
 #define RAVINE_FRAME_BUFFER_HPP_
 
 #include <new>
+#include <queue>
 
 #include "ravine_packets.hpp"
 
@@ -50,6 +51,9 @@ namespace RVN
     private:
         CropWindow* _win;
     };
+    /* ====================================================================== */
+    FrameBuffer* pop_queue(std::queue<FrameBuffer*>& q);
+    void delete_queue(std::queue<FrameBuffer*> q);
     /* ====================================================================== */
 }
 #endif

@@ -9,7 +9,7 @@ namespace RVN
     public:
         Packet(T data) : _data(data) {}
         Packet() = default;
-        T data() const { return _data; }
+        inline T data() const { return _data; }
     protected:
         T _data;
     };
