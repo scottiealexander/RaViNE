@@ -47,6 +47,14 @@ namespace RVN
     };
     /* ====================================================================== */
     typedef FramePacket<uint8_t> YUYVImagePacket;
+    typedef BufferPacket<int16_t> AudioPacket;
+    /* ====================================================================== */
+    class FloatPacket : public Packet<float>
+    {
+    public:
+        inline float& get_data() { return _data; }
+        inline void set_data(float x) { this->_data = x; }
+    }
     /* ====================================================================== */
 }
 

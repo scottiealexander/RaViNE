@@ -10,13 +10,6 @@
 
 namespace RVN
 {
-    class FloatPacket : public Packet<float>
-    {
-    public:
-        inline float& get_data() { return _data; }
-        inline void set_data(float x) { this->_data = x; }
-    }
-
     class NeuronFilter : public Filter<YUYVImagePacket, FloatPacket>
     {
     public:
