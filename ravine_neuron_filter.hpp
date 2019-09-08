@@ -20,7 +20,7 @@ namespace RVN
     class NeuronFilter : public Filter<YUYVImagePacket, FloatPacket>
     {
     public:
-        NeuronFilter(const CropWindow& win) : _win(win) {}
+        NeuronFilter(const char* rf_file, int x, int y);
         ~NeuronFilter();
         bool open_stream() override;
         bool close_stream() override;
@@ -32,6 +32,7 @@ namespace RVN
         inline void process(YUYVImagePacket* packet, length_t bytes);
 
     private:
+        bool read_rf_file(const char*, int&, int&);
         void allocate_buffers(int n);
 
         void filter(YUYVImagePacket* img, length_t bytes, float& act);
@@ -44,9 +45,11 @@ namespace RVN
     private:
 
         bool _open;
-        std::atomic_flag _state_continue = ATOMIC_FLAG_INIT;
 
         CropWindow _win;
+        uint8_t* _rf = nullptr;
+
+        std::atomic_flag _state_continue = ATOMIC_FLAG_INIT;
 
         std::atomic_flag _qin_busy = ATOMIC_FLAG_INIT;
         std::queue<FloatPacket*> _qin;
