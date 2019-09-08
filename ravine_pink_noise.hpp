@@ -26,6 +26,5 @@ namespace RVN
     };
 
     static unsigned long random_sample();
-
 }
 #endif
