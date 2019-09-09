@@ -10,11 +10,14 @@ extern "C"
 #include "ravine_spike_waveform.hpp"
 #include "ravine_audio_filter.hpp"
 
+#define NOISE_ROWS 16
+#define NOISE_LEVEL 0.3f
+
 namespace RVN
 {
     /* ====================================================================== */
     AudioFilter::AudioFilter() :
-        _isvalid(true), _noise(16)
+        _isvalid(true), _waveform("./spike.wf"), _noise(NOISE_ROWS, NOISE_LEVEL)
     {
         (void)error_check(Pa_Initialize());
 
@@ -22,8 +25,6 @@ namespace RVN
         //      true = no spike
         //      false = spike
         _no_spike.test_and_set();
-
-        _waveform.load_waveform("./spike.wf");
 
         if (!_waveform.isvalid())
         {

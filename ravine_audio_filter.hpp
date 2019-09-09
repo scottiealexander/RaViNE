@@ -6,7 +6,7 @@
 
 extern "C"
 {
-    #include "portaudio.h"
+#include "portaudio.h"
 }
 
 #include "ravine_filter_base.hpp"
@@ -66,9 +66,6 @@ namespace RVN
             return static_cast<AudioFilter*>(self)->callback(out, time, status);
         }
 
-    public:
-        WaveForm _waveform;
-
     private:
         bool _isvalid;
         std::string _err_msg;
@@ -77,6 +74,7 @@ namespace RVN
 
         PaStream* _pa_stream = nullptr;
 
+        WaveForm _waveform;
         PinkNoise _noise;
 
         std::atomic_flag _no_spike = ATOMIC_FLAG_INIT;
