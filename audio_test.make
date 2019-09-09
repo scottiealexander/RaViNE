@@ -1,12 +1,19 @@
+
+ifndef PORTAUDIO_PATH
+PORTAUDIO_PATH := /home/pi/Libraries/portaudio
+endif
+PA_LIBS := $(PORTAUDIO_PATH)/lib/.libs
+PA_INCLUDE := $(PORTAUDIO_PATH)/include
+
 CXX      := -g++
-CXXFLAGS := -pedantic-errors -Wall -Wextra -std=c++11
-#LDFLAGS  := -L/usr/lib -lstdc++ -lm -pthread
-LDFLAGS  := -L/home/pi/Libraries/portaudio/lib/.libs -lm -pthread -lasound -lportaudio
+CXXFLAGS := -pedantic-errors -Wall -Wextra -std=c++11 -L$(PA_LIBS)
+# LDFLAGS  := -L$(PA_LIBS) -lm -pthread -lasound -lportaudio
+LDFLAGS  := -lm -pthread -lasound -lportaudio
 BUILD    := ./build
 OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/app
 TARGET   := ravine_audio_test
-INCLUDE  := -I./ -I/home/pi/Libraries/portaudio/include
+INCLUDE  := -I./ -I$(PA_INCLUDE)
 SRC      :=                                 \
 	$(wildcard ./ravine_pink_noise.cpp)     \
 	$(wildcard ./ravine_spike_waveform.cpp) \
@@ -24,7 +31,7 @@ $(OBJ_DIR)/%.o: %.cpp
 
 $(APP_DIR)/$(TARGET): $(OBJECTS)
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) $(INCLUDE) $(LDFLAGS) -o $(APP_DIR)/$(TARGET) $(OBJECTS)
+	$(CXX) -o $(APP_DIR)/$(TARGET) $(INCLUDE) $(CXXFLAGS) $(OBJECTS) $(LDFLAGS)
 
 .PHONY: all build clean debug release
 
