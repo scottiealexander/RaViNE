@@ -2,11 +2,16 @@
 #define RAVINE_AUDIO_FILTER_HPP_
 
 #include <atomic>
+#include <string>
 
-#include "portaudio.h"
+extern "C"
+{
+    #include "portaudio.h"
+}
 
 #include "ravine_filter_base.hpp"
-#inlucde "ravine_pink_noise.hpp"
+#include "ravine_pink_noise.hpp"
+#include "ravine_spike_waveform.hpp"
 
 namespace RVN
 {
@@ -27,7 +32,7 @@ namespace RVN
 
         // only returns true iff send_spike() was just called with *NO*
         // intervening calls to have_spike()
-        inline bool have_spike() { _no_spike.test_and_set() == false; }
+        inline bool have_spike() { return _no_spike.test_and_set() == false; }
 
         inline bool isvalid() const { return _isvalid; }
 
@@ -45,7 +50,7 @@ namespace RVN
             _isvalid = false;
         }
 
-        bool error_check(PaError, PaError);
+        bool error_check(PaError, PaError err = paNoError);
 
         int callback(void*, const PaStreamCallbackTimeInfo*, PaStreamCallbackFlags);
 
@@ -54,12 +59,15 @@ namespace RVN
             void* out,
             unsigned long /* fpb */,
             const PaStreamCallbackTimeInfo* time,
-            PaStreamCallbackFlags, status,
+            PaStreamCallbackFlags status,
             void* self
         )
         {
             return static_cast<AudioFilter*>(self)->callback(out, time, status);
         }
+
+    public:
+        WaveForm _waveform;
 
     private:
         bool _isvalid;
@@ -67,15 +75,15 @@ namespace RVN
 
         bool _isspiking = false;
 
-        PaStream* _pa_stream;
+        PaStream* _pa_stream = nullptr;
 
         PinkNoise _noise;
-        WaveForm _waveform;
 
         std::atomic_flag _no_spike = ATOMIC_FLAG_INIT;
 
         static constexpr int sample_rate = 44100;
-        static constexpr int frames_per_buffer = 64; //~1.5ms
+        static constexpr int frames_per_buffer = 64; //~1.5ms @ 44100Hz
+        static constexpr float output_latency = 0.030f; // 30ms, avoids choppy sound
     };
 }
 

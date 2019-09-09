@@ -1,8 +1,20 @@
-#inlcude "ravine_audio_filter.hpp"
+#include <cstddef>
+#include <cstdio>
+
+extern "C"
+{
+    #include "portaudio.h"
+}
+
+#include "ravine_pink_noise.hpp"
+#include "ravine_spike_waveform.hpp"
+#include "ravine_audio_filter.hpp"
 
 namespace RVN
 {
-    AudioFilter::AudioFilter() : _noise(16), _isvalid(true)
+    /* ====================================================================== */
+    AudioFilter::AudioFilter() :
+        _isvalid(true), _noise(16)
     {
         (void)error_check(Pa_Initialize());
 
@@ -10,14 +22,21 @@ namespace RVN
         //      true = no spike
         //      false = spike
         _no_spike.test_and_set();
-    }
 
+        _waveform.load_waveform("./spike.wf");
+
+        if (!_waveform.isvalid())
+        {
+            set_error_msg("Failed to init waveform");
+        }
+    }
+    /* ---------------------------------------------------------------------- */
     AudioFilter::~AudioFilter()
     {
         (void)error_check(Pa_Terminate());
     }
-
-    bool AudioFilter::error_check(PaError got, PaError none = paNoError)
+    /* ---------------------------------------------------------------------- */
+    bool AudioFilter::error_check(PaError got, PaError none)
     {
         if (got != none)
         {
@@ -25,9 +44,9 @@ namespace RVN
         }
         return isvalid();
     }
-
-    int AudioFilter::callback(void* outp, const PaStreamCallbackTimeInfo* time,
-        PaStreamCallbackFlags status)
+    /* ---------------------------------------------------------------------- */
+    int AudioFilter::callback(void* outp, const PaStreamCallbackTimeInfo* /* time */,
+        PaStreamCallbackFlags /* status */)
     {
         float* out = static_cast<float*>(outp);
 
@@ -47,11 +66,18 @@ namespace RVN
                 *out++ = _noise.next_sample();
             }
         }
+
+        // // sink just copies data and returns
+        // AudioPacket packet(out, frames_per_buffer);
+        // send_sink(&packet, frames_per_buffer);
+
         return paContinue;
     }
-
+    /* ---------------------------------------------------------------------- */
     bool AudioFilter::open_stream()
     {
+        if (!isvalid()) { return false; }
+
         PaStreamParameters param;
         param.device = Pa_GetDefaultOutputDevice();
 
@@ -64,8 +90,7 @@ namespace RVN
             param.channelCount = 1;
             param.hostApiSpecificStreamInfo = NULL;
             param.sampleFormat = paFloat32;
-            param.suggestedLatency =
-                     Pa_GetDeviceInfo(param.device)->defaultLowOutputLatency;
+            param.suggestedLatency = output_latency;
 
             // use the static callback to be Pa compliant, which just forwards
             // the needed input to AudioFilter::callback() (implemented above)
@@ -85,20 +110,31 @@ namespace RVN
 
         return isvalid();
     }
-
+    /* ---------------------------------------------------------------------- */
     bool AudioFilter::start_stream()
     {
+        if (!isvalid()) { return false; }
+        return error_check(Pa_StartStream(_pa_stream));
     }
-
+    /* ---------------------------------------------------------------------- */
     bool AudioFilter::stop_stream()
     {
+        if (!isvalid()) { return false; }
+        return error_check(Pa_StopStream(_pa_stream));
     }
-
+    /* ---------------------------------------------------------------------- */
     bool AudioFilter::close_stream()
     {
+        if (!isvalid()) { return false; }
+        return error_check(Pa_CloseStream(_pa_stream));
     }
-
-    void AudioFilter::process(FloatPacket* packet, length_t bytes)
+    /* ---------------------------------------------------------------------- */
+    void AudioFilter::process(FloatPacket* packet, length_t /* bytes */)
     {
+        if (packet->data() > 0.0f)
+        {
+            send_spike();
+        }
     }
+    /* ====================================================================== */
 }

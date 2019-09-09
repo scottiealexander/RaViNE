@@ -25,6 +25,6 @@ namespace RVN
         float     _scalar;       /* Used to scale within range of -1.0 to +1.0 */
     };
 
-    static unsigned long random_sample();
+    //static unsigned long random_sample();
 }
 #endif

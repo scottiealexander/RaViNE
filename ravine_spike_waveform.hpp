@@ -5,21 +5,19 @@
 
 namespace RVN
 {
+    /* ====================================================================== */
     class WaveForm
     {
     public:
-        WaveForm() = default;
-        WaveForm(const char* file) : _ptr(0), _owned(true) { load_wf(file); }
+        WaveForm() : _length(0), _owned(false) {};
+
+        WaveForm(const char* file) : _ptr(0), _owned(true)
+        {
+            load_waveform(file);
+        }
+
         WaveForm(float* data, int length) :
             _data(data), _length(length), _ptr(0), _owned(false) {}
-
-        WaveForm(Waveform&& other)
-        {
-            this->_data = other.data;
-            this->_length = other.length;
-            this->_ptr = other._ptr;
-            this->_owned = other._owned;
-        }
 
         ~WaveForm()
         {
@@ -42,12 +40,20 @@ namespace RVN
             return out;
         }
 
+        inline void reset() { _ptr = 0; }
+        inline int loc() { return _ptr; }
+
+        inline bool isvalid() { return (_data != nullptr) && (_length > 0); }
+
     private:
         float* _data = nullptr;
         int32_t _length;
         int _ptr;
 
-        const bool _owned;
+        bool _owned;
     };
+    /* ====================================================================== */
+    inline WaveForm default_waveform() { return WaveForm("./spike.wf"); }
+    /* ====================================================================== */
 }
 #endif

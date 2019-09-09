@@ -15,11 +15,10 @@ namespace RVN
     }
     /* ====================================================================== */
     PinkNoise::PinkNoise(int nrow) :
+        _sum(0),
         _index(0),
-        _index_mask((1<<nrow) - 1),
-        _sum(0)
+        _index_mask((1<<nrow) - 1)
     {
-        int i;
         long pmax;
 
         /* Calculate maximum possible signed random value.
