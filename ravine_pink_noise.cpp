@@ -14,7 +14,7 @@ namespace RVN
         return seed;
     }
     /* ====================================================================== */
-    PinkNoise::PinkNoise(int nrow) :
+    PinkNoise::PinkNoise(int nrow, float noise_level) :
         _sum(0),
         _index(0),
         _index_mask((1<<nrow) - 1)
@@ -25,7 +25,7 @@ namespace RVN
          * Extra 1 for white noise always added.
          * */
         pmax = (nrow + 1) * (1 << (PINK_RANDOM_BITS - 1));
-        _scalar = 1.0f / pmax;
+        _scalar = noise_level / pmax;
 
         /* Initialize rows. */
         for(int k = 0; k < nrow; ++k) { _rows[k] = 0; }

@@ -8,7 +8,7 @@ namespace RVN
     class PinkNoise
     {
     public:
-        PinkNoise(int nrow);
+        PinkNoise(int nrow, float noise_level);
         float next_sample();
 
         inline int next_index()
@@ -24,7 +24,5 @@ namespace RVN
         int       _index_mask;   /* Index wrapped by ANDing with this mask. */
         float     _scalar;       /* Used to scale within range of -1.0 to +1.0 */
     };
-
-    //static unsigned long random_sample();
 }
 #endif
