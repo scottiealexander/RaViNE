@@ -3,9 +3,10 @@
 
 extern "C"
 {
-    #include "portaudio.h"
+#include "portaudio.h"
 }
 
+#include "ravine_packets.hpp"
 #include "ravine_pink_noise.hpp"
 #include "ravine_spike_waveform.hpp"
 #include "ravine_audio_filter.hpp"

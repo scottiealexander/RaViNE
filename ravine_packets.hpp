@@ -47,13 +47,49 @@ namespace RVN
     };
     /* ====================================================================== */
     typedef FramePacket<uint8_t> YUYVImagePacket;
-    typedef BufferPacket<float> AudioPacket;
     /* ====================================================================== */
-    class FloatPacket : public Packet<float>
+    template <class T>
+    class ScalarPacket : public Packet<T>
     {
     public:
-        inline float& get_data() { return _data; }
-        inline void set_data(float x) { this->_data = x; }
+        inline T& get_data() { return _data; }
+        inline void set_data(T x) { this->_data = x; }
+    };
+    /* ====================================================================== */
+    typedef ScalarPacket<float> FloatPacket;
+    /* ====================================================================== */
+    class EventPacket : public Packet<uint8_t>
+    {
+    public:
+        EventPacket(uint8_t d, float time) : Packet<uint8_t>(d), _time(time) {}
+        void copy_from(const EventPacket& other)
+        {
+            this->_data = other.data();
+            _time = other.timestamp();
+        }
+        inline float timestamp() { return _time; }
+    private:
+        const float _time;
+    };
+    /* ====================================================================== */
+    class AudioPacket : public BufferPacket<float>
+    {
+    public:
+        AudioPacket(float* data, length_t length, float time) :
+            BufferPacket<float>(data, length), _owned(false), _time(time) {}
+
+        AudioPacket(length_t length) :
+            BufferPacket<float>(new float[length], length), _owned(true), _time(-1.0f) {}
+
+        ~AudioPacket();
+
+        void copy_from(const AudioPacket&);
+
+        inline float timestamp() { return _time; }
+
+    private:
+        const bool _owned;
+        const float _time;
     };
     /* ====================================================================== */
 }
