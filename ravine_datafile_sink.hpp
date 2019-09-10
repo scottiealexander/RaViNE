@@ -9,77 +9,36 @@
 #include "ravine_sink_base.hpp"
 #include "ravine_packets.hpp"
 
+#include "pa_ringbuffer.h"
+#include "pa_util.h"
+
 namespace RVN
 {
     template <class T>
-    class PacketQueue
+    class RingBuffer
     {
     public:
-        inline int available()
+        RingBuffer(int length) : _isvalid(false), _length(legnth)
         {
-            wait(_qout_busy);
-            int n = _qout.size();
-            release(_qout_busy);
-            return n;
-        }
-
-        // get oldest item from qout
-        inline T* wait_pop()
-        {
-            wait(_qout_busy);
-            T* item = pop();
-            release(_qout_busy);
-            return item;
-        }
-
-        // get item from qin, copy in -> item, push item to qout
-        inline bool wait_push(const T* in)
-        {
-            T* vessel = nullptr;
-
-            wait(_qin_busy);
-
-            if (_qin.size() > 0)
+            _data = PaUtil_AllocateMemory(sizeof(T*) * _length);
+            if (_data != nullptr)
             {
-                vessel = _qin.last();
-                _qin.pop();
+                PaUtil_InitializeRingBuffer(&_buffer, sizeof(T*), _length, _data);
+                _isvalid = true;
             }
-
-            release(_qin_busy);
-
-            if (vessel == nullptr) { return false; }
-
-            vessel->copy_from(*in);
-
-            wait(_qout_busy);
-            _qout.push(vessel);
-            release(_qout_busy);
-
-            return true;
         }
-
-    private:
-        inline T* pop()
+        ~RingBuffer()
         {
-            T* item = nullptr;
-            if (_qout.size() > 0)
+            if (_data != nullptr)
             {
-                item = _qout.last();
-                _qout.pop();
+                PaUtil_FreeMemory(_data);
             }
-            return item;
         }
-        inline void wait(std::atomic_flag& f)
-        {
-            while (f.test_and_set()) { /* spin */ }
-        }
-        inline void release(std::atomic_flag& f) { f.clear(); }
     private:
-        std::atomic:flag _qin_busy = ATOMIC_FLAG_INIT;
-        std::queue<T*> _qin;
-
-        std::atomic:flag _qout_busy = ATOMIC_FLAG_INIT;
-        std::queue<T*> _qout;
+        bool _isvalid;
+        int _length;
+        PaUtilRingBuffer _buffer;
+        void* _data = nullptr;
     };
 
     class DataFileSink : public Sink<AudioPacket>, public Sink<EventPacket>
@@ -105,10 +64,10 @@ namespace RVN
         std::atomic_flag _state_continue = ATOMIC_FLAG_INIT;
 
         std::atomic_flag _qout_busy = ATOMIC_FLAG_INIT;
-        std::queue<AudioPacket*> _qout;
+        std::queue<EventPacket*> _qout;
 
         std::atomic_flag _qin_busy = ATOMIC_FLAG_INIT;
-        std::queue<AudioPacket*> _qin;
+        std::queue<EventPacket*> _qin;
 
         std::thread _write_thread;
     };

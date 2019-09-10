@@ -67,29 +67,20 @@ namespace RVN
             this->_data = other.data();
             _time = other.timestamp();
         }
-        inline float timestamp() { return _time; }
+        inline float timestamp() const { return _time; }
     private:
-        const float _time;
+        float _time;
     };
     /* ====================================================================== */
     class AudioPacket : public BufferPacket<float>
     {
     public:
         AudioPacket(float* data, length_t length, float time) :
-            BufferPacket<float>(data, length), _owned(false), _time(time) {}
+            BufferPacket<float>(data, length), _time(time) {}
 
-        AudioPacket(length_t length) :
-            BufferPacket<float>(new float[length], length), _owned(true), _time(-1.0f) {}
-
-        ~AudioPacket();
-
-        void copy_from(const AudioPacket&);
-
-        inline float timestamp() { return _time; }
-
+        inline float timestamp() const { return _time; }
     private:
-        const bool _owned;
-        const float _time;
+        float _time;
     };
     /* ====================================================================== */
 }

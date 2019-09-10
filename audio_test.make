@@ -3,7 +3,7 @@ ifndef PORTAUDIO_PATH
 PORTAUDIO_PATH := /home/pi/Libraries/portaudio
 endif
 PA_LIBS := $(PORTAUDIO_PATH)/lib/.libs
-PA_INCLUDE := $(PORTAUDIO_PATH)/include
+PA_INCLUDE := $(PORTAUDIO_PATH)/include $(PORTAUDIO_PATH)/src/common
 
 CXX      := -g++
 CXXFLAGS := -pedantic-errors -Wall -Wextra -std=c++11 -L$(PA_LIBS)
@@ -19,6 +19,7 @@ SRC      :=                                 \
 	$(wildcard ./ravine_spike_waveform.cpp) \
 	$(wildcard ./ravine_packets.cpp)        \
     $(wildcard ./ravine_audio_filter.cpp)   \
+	$(wildcard ./ravine_datafile_sink.cpp)  \
 	$(wildcard ./ravine_audio_test1.cpp)    \
 
 OBJECTS := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
