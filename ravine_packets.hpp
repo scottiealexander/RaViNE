@@ -29,7 +29,7 @@ namespace RVN
     public:
         BufferPacket(T* data, length_t length) : Packet<T*>(data), _length(length) {}
         BufferPacket() : Packet<T*>(nullptr), _length(0) {}
-        inline length_t length() const { return _length; }
+        virtual inline length_t length() const { return _length; }
         inline bool is_empty() const { return this->_data == nullptr; }
     protected:
         length_t _length;
@@ -68,7 +68,7 @@ namespace RVN
             _time = other.timestamp();
         }
         inline float timestamp() const { return _time; }
-    private:
+    protected:
         float _time;
     };
     /* ====================================================================== */
@@ -79,7 +79,7 @@ namespace RVN
             BufferPacket<float>(data, length), _time(time) {}
 
         inline float timestamp() const { return _time; }
-    private:
+    protected:
         float _time;
     };
     /* ====================================================================== */
