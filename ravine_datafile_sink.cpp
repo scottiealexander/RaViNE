@@ -69,14 +69,14 @@ namespace RVN
         // drop the frame?
         if (_audio_stream.load_ready())
         {
-            AudioBuffer* item = _audio_stream.pop_load();
-            item->copy(packet);
-            _audio_stream.push_load(item);
+            AudioBuffer* buf = _audio_stream.pop_load();
+            buf->copy(packet);
+            _audio_stream.push_load(buf);
         }
-        else
-        {
-            printf("[ERROR]: dropped audio packet...\n");
-        }
+        //else
+        //{
+            //printf("[ERROR]: dropped audio packet...\n");
+        //}
     }
     /* ---------------------------------------------------------------------- */
     //void DataFileSink::process(EventPacket* packet, length_t bytes)
@@ -106,13 +106,26 @@ namespace RVN
         return offset;
     }
     /* ---------------------------------------------------------------------- */
-    void DataFileSink::write_chunk(int32_t& count)
+    void DataFileSink::write_chunk(int32_t& count, int32_t& zero)
     {
         static const uint8_t id = 0x01;
 
         while (_audio_stream.unload_ready())
         {
             AudioBuffer* buf = _audio_stream.unload();
+
+            int n = 0;
+            for (int k = 0; k < buf->length(); ++k)
+            {
+                if (buf->data()[k] == 0.0f) { ++n; }
+            }
+
+            if (n == buf->length())
+            {
+                ++zero;
+                printf("[WARNING]: zero buffer @ %.10f\n", buf->timestamp());
+            }
+
             int32_t len = buf->length();
             float time = buf->timestamp();
 
@@ -123,6 +136,9 @@ namespace RVN
             _file.write(reinterpret_cast<char*>(&time), sizeof (time));
             _file.write(reinterpret_cast<char*>(&len), sizeof (len));
             _file.write(reinterpret_cast<char*>(buf->data()), len * sizeof (float));
+
+
+            buf->mark_empty();
 
             // buffer goes back in the cycle to be reloaded with data
             _audio_stream.reload(buf);
@@ -152,10 +168,11 @@ namespace RVN
         }
 
         int32_t packet_count = 0;
+        int32_t zero_count = 0;
 
         while (persist())
         {
-            write_chunk(packet_count);
+            write_chunk(packet_count, zero_count);
 
             // give some time to other processes
             sleep_ms(10);
@@ -163,13 +180,15 @@ namespace RVN
 
         // make sure to write any buffers that remain in the output queue to
         // the file
-        write_chunk(packet_count);
+        write_chunk(packet_count, zero_count);
 
         // seek to the location where we should insert the packet count
         _file.seekp(count_offset, _file.beg);
         _file.write(reinterpret_cast<char*>(&packet_count), sizeof (packet_count));
 
         _file.close();
+
+        printf("[STATS]: total packets: %d, zero packets: %d\n", packet_count, zero_count);
     }
     /* ---------------------------------------------------------------------- */
 }

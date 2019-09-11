@@ -96,7 +96,7 @@ namespace RVN
         float _start_time;
 
     public:
-        static constexpr int sample_rate = 44100;
+        static constexpr int sample_rate = 24000; //44100;
         static constexpr int frames_per_buffer = 64; //~1.5ms @ 44100Hz
         static constexpr float output_latency = 0.030f; // 30ms, avoids choppy sound
     };

@@ -29,11 +29,19 @@ SRC      :=                                 \
 
 OBJECTS := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 
+#generate dependency files... i think?
+DEPENDS := $(SRC:%.cpp=$(OBJ_DIR)/%.d)
+
 all: build $(APP_DIR)/$(TARGET)
 
+#include dependencies in the makefile, not really sure what this does...
+-include $(DEPENDS)
+
+#note the -MMD -MP, these apparently trigger re-building the .o when any file
+#listed in the corresponding .d (dependency) file changes... I think..
 $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) $(INCLUDE) -o $@ -c $<
+	$(CXX) $(CXXFLAGS) $(INCLUDE) -o $@ -MMD -MP -c $<
 
 $(APP_DIR)/$(TARGET): $(OBJECTS)
 	@mkdir -p $(@D)

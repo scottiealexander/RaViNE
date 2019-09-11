@@ -58,12 +58,17 @@ namespace RVN
             this->_working_length = len;
 
             this->_time = packet->timestamp();
+            _empty = false;
         }
+
+        inline bool has_data() const { return !_empty; }
+        inline void mark_empty() { _empty = true; }
 
         inline length_t length() const override { return _working_length; }
 
     private:
         length_t _working_length;
+        bool _empty = true;
     };
     /* ====================================================================== */
     class DataFileSink : public Sink<AudioPacket>
@@ -92,7 +97,7 @@ namespace RVN
         }
 
         int32_t write_header();
-        void write_chunk(int32_t&);
+        void write_chunk(int32_t&, int32_t&);
         void write_loop();
 
     private:
