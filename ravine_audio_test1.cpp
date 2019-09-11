@@ -7,6 +7,23 @@ int main()
 {
 
     RVN::AudioFilter filter;
+    RVN::DataFileSink sink("./testfile.rdf", filter.frames_per_buffer);
+
+    if (!sink.isvalid())
+    {
+        std::cout << "[ERROR]: failed to init sink" << std::endl;
+        std::cout << "[MSG]: " << sink.get_error_msg() << std::endl;
+        return -1;
+    }
+
+    // register!
+    filter.register_sink(sink);
+
+    if (!filter.has_valid_sink())
+    {
+        std::cout << "[ERROR]: failed to register sink" << std::endl;
+        return -1;
+    }
 
     if (!filter.open_stream())
     {

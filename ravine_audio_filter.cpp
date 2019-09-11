@@ -69,9 +69,9 @@ namespace RVN
             }
         }
 
-        // // sink just copies data and returns
-        // AudioPacket packet(out, frames_per_buffer);
-        // send_sink(&packet, frames_per_buffer);
+         // sink just copies data and returns
+         AudioPacket packet(out, frames_per_buffer);
+         send_sink(&packet, frames_per_buffer);
 
         return paContinue;
     }
@@ -115,19 +115,43 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     bool AudioFilter::start_stream()
     {
-        if (!isvalid()) { return false; }
-        return error_check(Pa_StartStream(_pa_stream));
+        if (isvalid() && !_stream_open)
+        {
+            // tell our sink to prepare to receive data
+            if (open_sink_stream())
+            {
+                // open the audio stream
+                if (error_check(Pa_StartStream(_pa_stream)))
+                {
+                    _stream_open = true;
+                }
+            }
+            else
+            {
+                set_error_msg("Failed to open sink stream");
+            }
+        }
+        return _stream_open
     }
     /* ---------------------------------------------------------------------- */
     bool AudioFilter::stop_stream()
     {
-        if (!isvalid()) { return false; }
-        return error_check(Pa_StopStream(_pa_stream));
+        if (!close_sink_stream())
+        {
+            set_error_msg("Failed to close sink stream");
+        }
+
+        if (error_check(Pa_StopStream(_pa_stream)))
+        {
+            _stream_open = false;
+        }
+
+        return isvalid();
     }
     /* ---------------------------------------------------------------------- */
     bool AudioFilter::close_stream()
     {
-        if (!isvalid()) { return false; }
+        if (_sink.isopen()) { (void)close_sink_stream(); }
         return error_check(Pa_CloseStream(_pa_stream));
     }
     /* ---------------------------------------------------------------------- */

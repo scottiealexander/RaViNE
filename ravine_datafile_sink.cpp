@@ -1,3 +1,4 @@
+#include <cstdio>
 extern "c"
 {
 #include "pa_ringbuffer.c"
@@ -14,6 +15,8 @@ namespace RVN
     {
         if (_audio_stream.isvalid())
         {
+            printf("[INFO]: audio stream appears valid\n");
+
             // construct a temporary buffer that will be cloned to fill the
             // buffers in the DataConveyor _audio_stream
             AudioBuffer temp(frames_per_buffer);
@@ -23,31 +26,55 @@ namespace RVN
             {
                 set_error_msg("Failed during audio stream fill");
             }
+            else
+            {
+                printf("[INFO]: audio stream filled from clone\n");
+            }
         }
     }
     /* ---------------------------------------------------------------------- */
     DataFileSink::~DataFileSink()
     {
-
+        printf("[INFO]: ~DataFileSink\n");
     }
     /* ---------------------------------------------------------------------- */
     bool DataFileSink::open_stream()
     {
-        if (isvalid())
+        if (isvalid() && !isopen())
         {
+            printf("[INFO]: Starting write thread!\n");
             _write_thread = std::thread(&DataFileSink::write_loop, this);
+            _stream_open = true;
         }
         return isvalid();
     }
     /* ---------------------------------------------------------------------- */
     bool DataFileSink::close_stream()
     {
-        _write_thread.join();
+        printf("[INFO]: Joining write thread\n");
+        if (isopen())
+        {
+            _write_thread.join();
+            _stream_open = false;
+        }
+        return isvalid();
     }
     /* ---------------------------------------------------------------------- */
-    void DataFileSink::process(AudioPacket* packet, length_t bytes)
+    void DataFileSink::process(AudioPacket* packet, length_t /* bytes */)
     {
-
+        // if we have a packet that is ready to be loaded, load it, otherwise
+        // drop the frame?
+        if (_audio_stream.load_ready())
+        {
+            AudioBuffer* item = _autio_stream.pop_load();
+            item->copy(packet);
+            _autio_stream.push_load(item);
+            printf("[INFO]: got audio packet and loaded it\n");
+        }
+        else
+        {
+           printf("[ERROR]: dropped audio packet\n");
+        }
     }
     /* ---------------------------------------------------------------------- */
     //void DataFileSink::process(EventPacket* packet, length_t bytes)
@@ -61,13 +88,13 @@ namespace RVN
         if (_file.is_open())
         {
             // channel types:
-            //  0x02 -> 0010 -> uint8
-            //  0x04 -> 0100 -> uint16
-            //  0x06 -> 0110 -> uint32
-            //  0x03 -> 0011 -> int8
-            //  0x05 -> 0101 -> int16
-            //  0x07 -> 0111 -> int32
-            //  0x0f -> 1111 -> float32
+            //    0x02 -> 0010 -> uint8
+            //    0x04 -> 0100 -> uint16
+            //    0x06 -> 0110 -> uint32
+            //    0x03 -> 0011 -> int8
+            //    0x05 -> 0101 -> int16
+            //    0x07 -> 0111 -> int32
+            //    0x0f -> 1111 -> float32
 
             // 1 channel,  ids = [0x01], types = [0x0f], packet count (int32)
             const uint8_t hdr[7] = {0x01, 0x01, 0x0f, 0x00, 0x00, 0x00, 0x00};
@@ -112,6 +139,13 @@ namespace RVN
         // offset (in bytes) in the file where we should write the packet count
         // when all packets have been received
         int32_t count_offset = write_header();
+
+        if (count_offset < 1)
+        {
+            set_error_msg("Failed to write file header");
+            _file.close();
+            return;
+        }
 
         const uint8_t id = 0x01;
 

@@ -33,6 +33,9 @@ namespace RVN
             }
         }
 
+        inline bool open_sink_stream() { return _sink->open_stream(); }
+        inline bool close_sink_stream() { return _sink->close_stream(); }
+
     protected:
         Sink<PacketType>* _sink = nullptr;
     };

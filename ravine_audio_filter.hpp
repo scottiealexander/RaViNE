@@ -70,6 +70,7 @@ namespace RVN
         bool _isvalid;
         std::string _err_msg;
 
+        bool _stream_open = false;
         bool _isspiking = false;
 
         PaStream* _pa_stream = nullptr;
@@ -79,6 +80,7 @@ namespace RVN
 
         std::atomic_flag _no_spike = ATOMIC_FLAG_INIT;
 
+    public:
         static constexpr int sample_rate = 44100;
         static constexpr int frames_per_buffer = 64; //~1.5ms @ 44100Hz
         static constexpr float output_latency = 0.030f; // 30ms, avoids choppy sound

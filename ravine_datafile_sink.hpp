@@ -7,6 +7,7 @@
 //#include <queue>
 #include <algorithm>
 
+#include <cstdio>
 #include <cstring>
 
 #include "ravine_sink_base.hpp"
@@ -34,6 +35,7 @@ namespace RVN
         {
             if (this->_data != nullptr)
             {
+                printf("[INFO]: deleting an audio buffer\n");
                 delete[] this->_data;
             }
         }
@@ -79,6 +81,8 @@ namespace RVN
             return _state_continue.test_and_set(std::memory_order_acquire);
         }
 
+        inline bool isopen() const { return _stream_open; }
+
         inline bool isvalid() const { return !_error; }
         inline const std::string& get_error_msg() const { return _err_msg; }
 
@@ -99,6 +103,7 @@ namespace RVN
         bool _error;
         std::string _error_msg;
 
+        bool _stream_open = false;
         const std::string _filepath;
         std::ofstream _file;
 
