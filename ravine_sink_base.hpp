@@ -12,6 +12,10 @@ namespace RVN
         virtual bool open_stream() = 0;
         virtual bool close_stream() = 0;
         virtual void process(PacketType*, length_t) = 0;
+
+        inline bool isopen() const { return _isopen; }
+    protected:
+        bool _isopen;
     };
 }
 

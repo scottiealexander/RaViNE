@@ -18,7 +18,8 @@ namespace RVN
 {
     /* ====================================================================== */
     AudioFilter::AudioFilter() :
-        _isvalid(true), _waveform("./spike.wf"), _noise(NOISE_ROWS, NOISE_LEVEL)
+        _isvalid(true), _waveform("./spike.wf"), _noise(NOISE_ROWS, NOISE_LEVEL),
+        _start_time(get_time())
     {
         (void)error_check(Pa_Initialize());
 
@@ -70,7 +71,7 @@ namespace RVN
         }
 
          // sink just copies data and returns
-         AudioPacket packet(out, frames_per_buffer);
+         AudioPacket packet(out, frames_per_buffer, get_elapsed());
          send_sink(&packet, frames_per_buffer);
 
         return paContinue;
@@ -131,7 +132,7 @@ namespace RVN
                 set_error_msg("Failed to open sink stream");
             }
         }
-        return _stream_open
+        return _stream_open;
     }
     /* ---------------------------------------------------------------------- */
     bool AudioFilter::stop_stream()
@@ -151,7 +152,7 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     bool AudioFilter::close_stream()
     {
-        if (_sink.isopen()) { (void)close_sink_stream(); }
+        if (_sink->isopen()) { (void)close_sink_stream(); }
         return error_check(Pa_CloseStream(_pa_stream));
     }
     /* ---------------------------------------------------------------------- */

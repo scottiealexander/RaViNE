@@ -29,8 +29,9 @@ namespace RVN
     public:
         BufferPacket(T* data, length_t length) : Packet<T*>(data), _length(length) {}
         BufferPacket() : Packet<T*>(nullptr), _length(0) {}
+        virtual ~BufferPacket() {}
         virtual inline length_t length() const { return _length; }
-        inline bool is_empty() const { return this->_data == nullptr; }
+        inline bool isvalid() const { return this->_data != nullptr; }
     protected:
         length_t _length;
     };
@@ -52,7 +53,7 @@ namespace RVN
     class ScalarPacket : public Packet<T>
     {
     public:
-        inline T& get_data() { return _data; }
+        inline T& get_data() { return this->_data; }
         inline void set_data(T x) { this->_data = x; }
     };
     /* ====================================================================== */
@@ -77,7 +78,7 @@ namespace RVN
     public:
         AudioPacket(float* data, length_t length, float time) :
             BufferPacket<float>(data, length), _time(time) {}
-
+        virtual ~AudioPacket() {}
         inline float timestamp() const { return _time; }
     protected:
         float _time;

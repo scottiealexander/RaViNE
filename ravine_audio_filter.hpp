@@ -3,6 +3,7 @@
 
 #include <atomic>
 #include <string>
+#include <ctime>
 
 extern "C"
 {
@@ -66,6 +67,18 @@ namespace RVN
             return static_cast<AudioFilter*>(self)->callback(out, time, status);
         }
 
+        inline float get_time() const
+        {
+            timespec t;
+            clock_gettime(CLOCK_MONOTONIC, &t);
+            return (float)t.tv_sec + ((float)t.tv_nsec) * 1e-9;
+        }
+
+        inline float get_elapsed() const
+        {
+            return get_time() - _start_time;
+        }
+
     private:
         bool _isvalid;
         std::string _err_msg;
@@ -79,6 +92,8 @@ namespace RVN
         PinkNoise _noise;
 
         std::atomic_flag _no_spike = ATOMIC_FLAG_INIT;
+
+        float _start_time;
 
     public:
         static constexpr int sample_rate = 44100;

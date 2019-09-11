@@ -1,10 +1,12 @@
 #ifndef RAVINE_DATA_CONVEYOR_HPP_
 #define RAVINE_DATA_CONVEYOR_HPP_
 
-// yep, we are including the impl. to avoid any build complications
+#include <cstdlib>
+#include <cstdio>
+
 extern "C"
 {
-#include "pa_ringbuffer.c"
+#include "pa_ringbuffer.h"
 }
 
 namespace RVN
@@ -15,14 +17,14 @@ namespace RVN
     {
     public:
         /* ------------------------------------------------------------------ */
-        RingBuffer(int length) : _length(legnth)
+        RingBuffer(int length) : _length(length)
         {
-            _data = PaUtil_AllocateMemory(sizeof(T*) * _length);
+            _data = malloc(sizeof(T*) * _length);
             if (_data != nullptr)
             {
                 if (PaUtil_InitializeRingBuffer(&_buffer, sizeof(T*), _length, _data) < 0)
                 {
-                    PaUtil_FreeMemory(_data);
+                    free(_data);
                     _data = nullptr;
                 }
             }
@@ -32,7 +34,7 @@ namespace RVN
         {
             if (_data != nullptr)
             {
-                PaUtil_FreeMemory(_data);
+                free(_data);
             }
         }
         /* ------------------------------------------------------------------ */
@@ -50,14 +52,18 @@ namespace RVN
         /* ------------------------------------------------------------------ */
         inline int write(const T* data)
         {
-            return PaUtil_WriteRingBuffer(&_buffer, data, 1);
+            // we pass the address of the item we want to write to the
+            // ringbuffer, the item is a T* thus &data...
+            return PaUtil_WriteRingBuffer(&_buffer, &data, 1);
         }
         /* ------------------------------------------------------------------ */
         inline T* read()
         {
-            void* data;
-            PaUtil_ReadRingBuffer(&_buffer, data, 1);
-            return static_cast<T*>(data);
+            // as above, we pass the address of where we want the item to be
+            // writen to, the item is a T*
+            T* data;
+            PaUtil_ReadRingBuffer(&_buffer, &data, 1);
+            return data;
         }
         /* ------------------------------------------------------------------ */
     private:
@@ -77,14 +83,17 @@ namespace RVN
         /* ------------------------------------------------------------------ */
         ~DataConveyor()
         {
+            printf("[INFO]: ~DataConveyor...\n");
             while (load_ready())
             {
+                printf("    [INFO]: deleting item from _unloaded queue\n");
                 T* ptr = pop_load();
                 delete ptr;
             }
 
             while (unload_ready())
             {
+                printf("    [INFO]: deleting item from _loaded queue\n");
                 T* ptr = unload();
                 delete ptr;
             }
@@ -117,6 +126,8 @@ namespace RVN
             {
                 success = false;
             }
+
+            printf("[INFO]: _unloaded queue holds %d items\n", _unloaded.read_available());
             return success;
         }
         /* ------------------------------------------------------------------ */

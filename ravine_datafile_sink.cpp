@@ -1,8 +1,4 @@
 #include <cstdio>
-extern "c"
-{
-#include "pa_ringbuffer.c"
-}
 
 #include "ravine_utils.hpp"
 #include "ravine_datafile_sink.hpp"
@@ -21,6 +17,8 @@ namespace RVN
             // buffers in the DataConveyor _audio_stream
             AudioBuffer temp(frames_per_buffer);
             temp.fill(0.0f);
+
+            printf("[INFO]: FOOBAR\n");
 
             if (!_audio_stream.fill(temp))
             {
@@ -42,9 +40,13 @@ namespace RVN
     {
         if (isvalid() && !isopen())
         {
+            // indicate that we should continue streaming to file...
+            printf("[INFO]: setting persist flag to true\n");
+            _state_continue.test_and_set();
+
             printf("[INFO]: Starting write thread!\n");
             _write_thread = std::thread(&DataFileSink::write_loop, this);
-            _stream_open = true;
+            this->_isopen = true;
         }
         return isvalid();
     }
@@ -54,8 +56,9 @@ namespace RVN
         printf("[INFO]: Joining write thread\n");
         if (isopen())
         {
+            _state_continue.clear();
             _write_thread.join();
-            _stream_open = false;
+            this->_isopen = false;
         }
         return isvalid();
     }
@@ -66,10 +69,9 @@ namespace RVN
         // drop the frame?
         if (_audio_stream.load_ready())
         {
-            AudioBuffer* item = _autio_stream.pop_load();
+            AudioBuffer* item = _audio_stream.pop_load();
             item->copy(packet);
-            _autio_stream.push_load(item);
-            printf("[INFO]: got audio packet and loaded it\n");
+            _audio_stream.push_load(item);
         }
         else
         {
@@ -82,7 +84,7 @@ namespace RVN
 
     //}
     /* ---------------------------------------------------------------------- */
-    int32_t write_header()
+    int32_t DataFileSink::write_header()
     {
         int32_t offset = -1;
         if (_file.is_open())
@@ -98,14 +100,16 @@ namespace RVN
 
             // 1 channel,  ids = [0x01], types = [0x0f], packet count (int32)
             const uint8_t hdr[7] = {0x01, 0x01, 0x0f, 0x00, 0x00, 0x00, 0x00};
-            _file.write(hdr, 7);
+            _file.write(reinterpret_cast<const char*>(hdr), 7);
             offset = 3;
         }
         return offset;
     }
     /* ---------------------------------------------------------------------- */
-    void write_chunk(int32_t& count)
+    void DataFileSink::write_chunk(int32_t& count)
     {
+        static const uint8_t id = 0x01;
+
         while (_audio_stream.unload_ready())
         {
             AudioBuffer* buf = _audio_stream.unload();
@@ -115,7 +119,7 @@ namespace RVN
             // a packet: {id::uint8, time::float, length::int32, data::array}
             // where the type of data is given by the entry in the channel
             // type array in the header that corresponds to the given id
-            _file.write(&id, sizeof (id));
+            _file.write(reinterpret_cast<const char*>(&id), sizeof (id));
             _file.write(reinterpret_cast<char*>(&time), sizeof (time));
             _file.write(reinterpret_cast<char*>(&len), sizeof (len));
             _file.write(reinterpret_cast<char*>(buf->data()), len * sizeof (float));
@@ -146,8 +150,6 @@ namespace RVN
             _file.close();
             return;
         }
-
-        const uint8_t id = 0x01;
 
         int32_t packet_count = 0;
 

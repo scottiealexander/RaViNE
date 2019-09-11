@@ -1,10 +1,9 @@
-#ifdef RAVINE_DATAFILE_SINK_HPP_
+#ifndef RAVINE_DATAFILE_SINK_HPP_
 #define RAVINE_DATAFILE_SINK_HPP_
 
 #include <fstream>
 #include <thread>
 #include <atomic>
-//#include <queue>
 #include <algorithm>
 
 #include <cstdio>
@@ -35,7 +34,6 @@ namespace RVN
         {
             if (this->_data != nullptr)
             {
-                printf("[INFO]: deleting an audio buffer\n");
                 delete[] this->_data;
             }
         }
@@ -57,16 +55,16 @@ namespace RVN
             // two as our "working length"
             this->_working_length = len;
 
-            this->_time = packet->timestamp;
+            this->_time = packet->timestamp();
         }
 
         inline length_t length() const override { return _working_length; }
 
     private:
         length_t _working_length;
-    }
+    };
     /* ====================================================================== */
-    class DataFileSink : public Sink<AudioPacket>//, public Sink<EventPacket>
+    class DataFileSink : public Sink<AudioPacket>
     {
     public:
         DataFileSink(const char*, int);
@@ -81,15 +79,13 @@ namespace RVN
             return _state_continue.test_and_set(std::memory_order_acquire);
         }
 
-        inline bool isopen() const { return _stream_open; }
-
         inline bool isvalid() const { return !_error; }
-        inline const std::string& get_error_msg() const { return _err_msg; }
+        inline const std::string& get_error_msg() const { return _error_msg; }
 
     private:
         void set_error_msg(const char* msg)
         {
-            _err_msg = msg;
+            _error_msg = msg;
             _error = true;
         }
 
@@ -103,7 +99,6 @@ namespace RVN
         bool _error;
         std::string _error_msg;
 
-        bool _stream_open = false;
         const std::string _filepath;
         std::ofstream _file;
 
