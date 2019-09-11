@@ -137,14 +137,22 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     bool AudioFilter::stop_stream()
     {
-        if (!close_sink_stream())
-        {
-            set_error_msg("Failed to close sink stream");
-        }
-
         if (error_check(Pa_StopStream(_pa_stream)))
         {
             _stream_open = false;
+        }
+
+        if (!close_sink_stream())
+        {
+            if (isvalid())
+            {
+                // don't overwrite an existing error message
+                set_error_msg("Failed to close sink stream");
+            }
+            else
+            {
+                _err_msg.append(" & failed to close sink stream");
+            }
         }
 
         return isvalid();
