@@ -22,12 +22,14 @@ namespace RVN
     {
     public:
         AudioBuffer(int length) :
-            AudioPacket(new float[length], length, -1.0f) {}
+            AudioPacket(new float[length], length, -1.0f),
+            _working_length(length) {}
 
-        AudioBuffer(const AudioBuffer& other) :
-            AudioPacket(new float[other.length()], other.length(), other.timestamp())
+        AudioBuffer(const AudioBuffer& o) :
+            AudioPacket(new float[o.length()], o.length(), o.timestamp()),
+            _working_length(o.length())
         {
-            memcpy(this->_data, other.data(), other.length() * sizeof (float));
+            memcpy(this->_data, o.data(), o.length() * sizeof (float));
         }
 
         ~AudioBuffer()
