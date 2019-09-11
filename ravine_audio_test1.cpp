@@ -48,15 +48,14 @@ int main()
         return -1;
     }
 
-    RVN::sleep_ms(1000);
 
-    //for (int k = 0; k < 4; ++k)
-    //{
-        //RVN::sleep_ms(500);
-        //filter.send_spike();
-    //}
+    for (int k = 0; k < 4; ++k)
+    {
+        RVN::sleep_ms(250);
+        filter.send_spike();
+    }
 
-    //RVN::sleep_ms(250);
+    RVN::sleep_ms(250);
 
     if (!filter.stop_stream())
     {

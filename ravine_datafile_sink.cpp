@@ -7,7 +7,7 @@ namespace RVN
 {
     /* ---------------------------------------------------------------------- */
     DataFileSink::DataFileSink(const char* filepath, int frames_per_buffer) :
-        _audio_stream(16), _filepath(filepath)
+        _audio_stream(16), _error(false), _filepath(filepath)
     {
         if (_audio_stream.isvalid())
         {
@@ -73,6 +73,10 @@ namespace RVN
             item->copy(packet);
             _audio_stream.push_load(item);
         }
+        else
+        {
+            printf("[ERROR]: dropped audio packet...\n");
+        }
     }
     /* ---------------------------------------------------------------------- */
     //void DataFileSink::process(EventPacket* packet, length_t bytes)
@@ -111,8 +115,6 @@ namespace RVN
             AudioBuffer* buf = _audio_stream.unload();
             int32_t len = buf->length();
             float time = buf->timestamp();
-
-            //printf("[INFO]: got buffer of size %d at %f\n", len, time);
 
             // a packet: {id::uint8, time::float, length::int32, data::array}
             // where the type of data is given by the entry in the channel
