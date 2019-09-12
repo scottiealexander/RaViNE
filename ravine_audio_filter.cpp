@@ -18,8 +18,7 @@ namespace RVN
 {
     /* ====================================================================== */
     AudioFilter::AudioFilter() :
-        _isvalid(true), _waveform("./spike.wf"), _noise(NOISE_ROWS, NOISE_LEVEL),
-        _start_time(get_time())
+        _isvalid(true), _waveform("./spike.wf"), _noise(NOISE_ROWS, NOISE_LEVEL)
     {
         (void)error_check(Pa_Initialize());
 
@@ -62,16 +61,19 @@ namespace RVN
                 // next_sample() will set _isspiking to false once the spike
                 // waveform has been sampled in its entirety, so we retain our
                 // state w.r.t to spiking across calls from PA
-                *out++ = _waveform.next_sample(_isspiking);
+                out[k] = _waveform.next_sample(_isspiking);
             }
             else
             {
-                *out++ = _noise.next_sample();
+                // NOTE: this was *out++ which *OF COURSE* leaves the pointer
+                // pointing to the *END OF THE ARRAY* for the AudioPacket copy
+                // construction below... WTF...
+                out[k] = _noise.next_sample();
             }
         }
 
          // sink just copies data and returns
-         AudioPacket packet(out, frames_per_buffer, get_elapsed());
+         AudioPacket packet(out, frames_per_buffer, _clock.now());
          send_sink(&packet, frames_per_buffer);
 
         return paContinue;
