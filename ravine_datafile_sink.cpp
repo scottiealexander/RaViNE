@@ -114,17 +114,17 @@ namespace RVN
         {
             AudioBuffer* buf = _audio_stream.unload();
 
-            int n = 0;
-            for (int k = 0; k < buf->length(); ++k)
-            {
-                if (buf->data()[k] == 0.0f) { ++n; }
-            }
+            //int n = 0;
+            //for (int k = 0; k < buf->length(); ++k)
+            //{
+                //if (buf->data()[k] == 0.0f) { ++n; }
+            //}
 
-            if (n == buf->length())
-            {
-                ++zero;
-                printf("[WARNING]: zero buffer @ %.10f\n", buf->timestamp());
-            }
+            //if (n == buf->length())
+            //{
+                //++zero;
+                //printf("[WARNING]: zero buffer @ %.10f\n", buf->timestamp());
+            //}
 
             int32_t len = buf->length();
             float time = buf->timestamp();
