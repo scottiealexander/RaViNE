@@ -50,6 +50,11 @@ namespace RVN
     int AudioFilter::callback(void* outp, const PaStreamCallbackTimeInfo* /* time */,
         PaStreamCallbackFlags /* status */)
     {
+        // in theory we could use the streamcallbacktime, but that uses
+        // clock_gettime(CLOCK_REALTIME), and we probably want a steady clock,
+        // CLOCK_MONOTONIC or std::chrono::steady_clock which is what _clock
+        // uses, which should aid synchronizing timestamps across threads
+        float time = _clock.now();
         float* out = static_cast<float*>(outp);
 
         for (int k = 0; k < frames_per_buffer; ++k)
@@ -73,7 +78,7 @@ namespace RVN
         }
 
          // sink just copies data and returns
-         AudioPacket packet(out, frames_per_buffer, _clock.now());
+         AudioPacket packet(out, frames_per_buffer, time);
          send_sink(&packet, frames_per_buffer);
 
         return paContinue;
