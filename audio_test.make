@@ -23,6 +23,7 @@ SRC      :=                                 \
 	$(wildcard ./ravine_pink_noise.cpp)     \
 	$(wildcard ./ravine_spike_waveform.cpp) \
 	$(wildcard ./ravine_packets.cpp)        \
+    $(wildcard ./ravine_clock.cpp)          \
 	$(wildcard ./ravine_audio_filter.cpp)   \
 	$(wildcard ./ravine_datafile_sink.cpp)  \
 	$(wildcard ./ravine_audio_test1.cpp)    \

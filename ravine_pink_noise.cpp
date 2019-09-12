@@ -57,7 +57,7 @@ namespace RVN
              */
             _sum -= _rows[nzero];
             new_sample = ((long)random_sample()) >> PINK_RANDOM_SHIFT;
-            _sum+= new_sample;
+            _sum += new_sample;
             _rows[nzero] = new_sample;
         }
 

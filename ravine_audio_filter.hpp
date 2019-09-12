@@ -10,6 +10,7 @@ extern "C"
 #include "portaudio.h"
 }
 
+#include "ravine_clock.hpp"
 #include "ravine_filter_base.hpp"
 #include "ravine_pink_noise.hpp"
 #include "ravine_spike_waveform.hpp"
@@ -67,17 +68,6 @@ namespace RVN
             return static_cast<AudioFilter*>(self)->callback(out, time, status);
         }
 
-        inline float get_time() const
-        {
-            timespec t;
-            clock_gettime(CLOCK_MONOTONIC, &t);
-            return (float)t.tv_sec + ((float)t.tv_nsec) * 1e-9;
-        }
-
-        inline float get_elapsed() const
-        {
-            return get_time() - _start_time;
-        }
 
     private:
         bool _isvalid;
@@ -93,11 +83,11 @@ namespace RVN
 
         std::atomic_flag _no_spike = ATOMIC_FLAG_INIT;
 
-        float _start_time;
+        Clock _clock;
 
     public:
-        static constexpr int sample_rate = 44100;
-        static constexpr int frames_per_buffer = 64; //~1.5ms @ 44100Hz
+        static constexpr int sample_rate = 24000;
+        static constexpr int frames_per_buffer = 1024; //~1.5ms @ 44100Hz
         static constexpr float output_latency = 0.030f; // 30ms, avoids choppy sound
     };
 }

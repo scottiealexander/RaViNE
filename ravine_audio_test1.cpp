@@ -49,6 +49,8 @@ int main()
     }
 
 
+    //RVN::sleep_ms(1000);
+
     for (int k = 0; k < 4; ++k)
     {
         RVN::sleep_ms(250);

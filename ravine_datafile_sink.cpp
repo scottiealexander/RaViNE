@@ -7,7 +7,7 @@ namespace RVN
 {
     /* ---------------------------------------------------------------------- */
     DataFileSink::DataFileSink(const char* filepath, int frames_per_buffer) :
-        _audio_stream(16), _error(false), _filepath(filepath)
+        _audio_stream(8), _error(false), _filepath(filepath)
     {
         if (_audio_stream.isvalid())
         {
@@ -73,10 +73,10 @@ namespace RVN
             buf->copy(packet);
             _audio_stream.push_load(buf);
         }
-        //else
-        //{
-            //printf("[ERROR]: dropped audio packet...\n");
-        //}
+        else
+        {
+            printf("[ERROR]: dropped audio packet...\n");
+        }
     }
     /* ---------------------------------------------------------------------- */
     //void DataFileSink::process(EventPacket* packet, length_t bytes)
@@ -106,7 +106,7 @@ namespace RVN
         return offset;
     }
     /* ---------------------------------------------------------------------- */
-    void DataFileSink::write_chunk(int32_t& count, int32_t& zero)
+    void DataFileSink::write_chunk(int32_t& count, int32_t& /*zero*/)
     {
         static const uint8_t id = 0x01;
 
