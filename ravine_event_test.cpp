@@ -4,7 +4,7 @@
 #include "ravine_utils.hpp"
 #include "ravine_event_source.hpp"
 
-#define port 65000
+#define port 65001
 
 int main()
 {
@@ -25,7 +25,11 @@ int main()
 
     std::cout << "[INFO]: got connection, entering wait loop" << std::endl;
 
-    RVN::sleep_ms(1000);
+    // RVN::sleep_ms(1000);
+    while (source.still_running())
+    {
+        RVN::sleep_ms(500);
+    }
 
     if (!source.stop_stream())
     {

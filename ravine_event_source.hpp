@@ -27,6 +27,7 @@ namespace RVN
         bool close_stream() override;
 
         inline bool isready() { return _socket.is_open(); }
+        inline bool still_running() { return !_io.stopped(); }
 
     private:
         inline void async_read()
