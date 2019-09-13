@@ -3,7 +3,7 @@
 
 #include <functional>
 #include <thread>
-#include "asio.h"
+#include "asio.hpp"
 
 #include "ravine_clock.hpp"
 #include "ravine_packets.hpp"
@@ -26,13 +26,13 @@ namespace RVN
         inline bool stop_stream() override { _socket.close(); return true; }
         bool close_stream() override;
 
-        inline bool isvalid() { return _socket.is_open(); }
+        inline bool isready() { return _socket.is_open(); }
 
     private:
         inline void async_read()
         {
             _socket.async_read_some(
-                asio::buffer(&_data, 1),
+                asio::buffer(&_buffer, 1),
                 std::bind(&EventSource::handle_read, this,
                     std::placeholders::_1,
                     std::placeholders::_2

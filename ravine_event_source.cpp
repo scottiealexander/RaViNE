@@ -11,11 +11,9 @@ namespace RVN
             std::bind(&EventSource::handle_accept, this, std::placeholders::_1)
         );
 
-        // NOTE TODO: we may just be able to call _io.poll() instead, which is
-        // non-blocking (and probably ~= to calling run() in a seperate thread
-        // we'll need to test this though...
+        // launch our io_context thread: this just call io_context::run() in
+        // a seperate thread to allow control to return to the caller
         _io_thread = std::thread(&EventSource::io_loop, this);
-        // _io.poll();
 
         return true;
     }
@@ -29,6 +27,8 @@ namespace RVN
 
         // wait until it actually does
         _io_thread.join();
+
+        return true;
     }
     /* ---------------------------------------------------------------------- */
     void EventSource::handle_accept(const asio::error_code& ec)
@@ -47,23 +47,18 @@ namespace RVN
         {
             if (bytes > 0)
             {
-                //EventPacket packet(_data, time);
+                //EventPacket packet(_buffer, time);
                 //send_sink(&packet, 1);
-                std::cout << "[REC]: " << (int)_data << std::endl;
+                std::cout << "[REC]: " << (int)_buffer << " @ " << time << std::endl;
             }
 
-            if (_data != 0xff)
+            // if we get the close signal (255) we do *NOT* start another read
+            // operation, which will allow our io_context::run() (in io_loop())
+            // to return as it will have no tasks left to run
+            if (_buffer != 0xff)
             {
                 async_read();
             }
-            else
-            {
-                (void)close_stream();
-            }
-        }
-        else
-        {
-            (void)close_stream();
         }
     }
     /* ---------------------------------------------------------------------- */
