@@ -62,11 +62,13 @@ namespace RVN
     class EventPacket : public Packet<uint8_t>
     {
     public:
+        EventPacket() : Packet<uint8_t>(0x00), _time(-1.0f) {}
         EventPacket(uint8_t d, float time) : Packet<uint8_t>(d), _time(time) {}
-        void copy_from(const EventPacket& other)
+
+        inline void operator=(const EventPacket* other)
         {
-            this->_data = other.data();
-            _time = other.timestamp();
+            this->_data = other->data();
+            _time = other->timestamp();
         }
         inline float timestamp() const { return _time; }
     protected:

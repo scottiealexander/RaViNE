@@ -1,142 +1,58 @@
-//
-// async_tcp_echo_server.cpp
-// ~~~~~~~~~~~~~~~~~~~~~~~~~
-//
-// Copyright (c) 2003-2018 Christopher M. Kohlhoff (chris at kohlhoff dot com)
-//
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-//
+#ifndef RAVINE_EVENT_SOURCE_HPP_
+#define RAVINE_EVENT_SOURCE_HPP_
 
-//g++ -std=c++11 -o async_server -I../asio-1.12.2/include/ -pthread tcp_echo_server.cpp
-
-#define ASIO_STANDALONE 1
-
-#include <cstdlib>
-#include <iostream>
-// #include <boost/bind.hpp>
 #include <functional>
-#include "asio.hpp"
+#include <thread>
+#include "asio.h"
 
-using asio::ip::tcp;
+#include "ravine_clock.hpp"
+#include "ravine_packets.hpp"
+#include "ravine_sink_base.hpp"
+#include "ravine_source_base.hpp"
 
-class session
+namespace RVN
 {
-public:
-  session(asio::io_context& io_context)
-    : socket_(io_context)
-  {
-  }
+    typedef asio::ip::tcp tcp;
 
-  tcp::socket& socket()
-  {
-    return socket_;
-  }
-
-  void start()
-  {
-    socket_.async_read_some(asio::buffer(data_, max_length),
-        std::bind(&session::handle_read, this,
-          std::placeholders::_1,
-          std::placeholders::_2));
-  }
-
-private:
-  void handle_read(const asio::error_code& error,
-      size_t bytes_transferred)
-  {
-    if (!error)
+    class EventSource : public Source<EventPacket>
     {
-      asio::async_write(socket_,
-          asio::buffer(data_, bytes_transferred),
-          std::bind(&session::handle_write, this,
-            std::placeholders::_1));
-    }
-    else
-    {
-      delete this;
-    }
-  }
+    public:
+        EventSource(int port) : _acceptor(_io, tcp::endpoint(tcp::v4(), port)),
+            _socket(_io) {}
 
-  void handle_write(const asio::error_code& error)
-  {
-    if (!error)
-    {
-      socket_.async_read_some(asio::buffer(data_, max_length),
-          std::bind(&session::handle_read, this,
-            std::placeholders::_1,
-            std::placeholders::_2));
-    }
-    else
-    {
-      delete this;
-    }
-  }
+        bool open_stream() override;  // run io context & start an async accept opperation
+        inline bool start_stream() override { return true; }
+        inline bool stop_stream() override { _socket.close(); return true; }
+        bool close_stream() override; // close the connection
 
-  tcp::socket socket_;
-  enum { max_length = 1024 };
-  char data_[max_length];
-};
+        inline bool isvalid() { return _socket.is_open(); }
 
-class server
-{
-public:
-  server(asio::io_context& io_context, short port)
-    : io_context_(io_context),
-      acceptor_(io_context, tcp::endpoint(tcp::v4(), port))
-  {
-    start_accept();
-  }
+    private:
+        inline void async_read()
+        {
+            _socket.async_read_some(
+                asio::buffer(&_data, 1),
+                std::bind(&EventSource::handle_read, this,
+                    std::placeholders::_1,
+                    std::placeholders::_2
+                )
+            );
+        }
 
-private:
-  void start_accept()
-  {
-    session* new_session = new session(io_context_);
-    acceptor_.async_accept(new_session->socket(),
-        std::bind(&server::handle_accept, this, new_session,
-          std::placeholders::_1));
-  }
+        void handle_accept(const asio::error_code&);
+        void handle_read(const asio::error_code&, uint32_t);
 
-  void handle_accept(session* new_session,
-      const asio::error_code& error)
-  {
-    if (!error)
-    {
-      new_session->start();
-    }
-    else
-    {
-      delete new_session;
-    }
+        void io_loop();
 
-    start_accept();
-  }
+    private:
+        asio::io_context _io;
+        tcp::acceptor _acceptor;
+        tcp::socket _socket;
 
-  asio::io_context& io_context_;
-  tcp::acceptor acceptor_;
-};
+        uint8_t _buffer;
 
-int main(int argc, char* argv[])
-{
-  try
-  {
-    if (argc != 2)
-    {
-      std::cerr << "Usage: async_tcp_echo_server <port>\n";
-      return 1;
-    }
-
-    asio::io_context io_context;
-
-    using namespace std; // For atoi.
-    server s(io_context, atoi(argv[1]));
-
-    io_context.run();
-  }
-  catch (std::exception& e)
-  {
-    std::cerr << "Exception: " << e.what() << "\n";
-  }
-
-  return 0;
+        Clock _clock;
+        std::thread _io_thread;
+    };
 }
+#endif

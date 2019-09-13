@@ -54,7 +54,7 @@ namespace RVN
         // clock_gettime(CLOCK_REALTIME), and we probably want a steady clock,
         // CLOCK_MONOTONIC or std::chrono::steady_clock which is what _clock
         // uses, which should aid synchronizing timestamps across threads
-        float time = _clock.now();
+        const float time = _clock.now();
         float* out = static_cast<float*>(outp);
 
         for (int k = 0; k < frames_per_buffer; ++k)
