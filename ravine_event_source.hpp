@@ -12,18 +12,19 @@
 
 namespace RVN
 {
+    /* ====================================================================== */
     typedef asio::ip::tcp tcp;
-
+    /* ====================================================================== */
     class EventSource : public Source<EventPacket>
     {
     public:
         EventSource(int port) : _acceptor(_io, tcp::endpoint(tcp::v4(), port)),
             _socket(_io) {}
 
-        bool open_stream() override;  // run io context & start an async accept opperation
+        bool open_stream() override;
         inline bool start_stream() override { return true; }
         inline bool stop_stream() override { _socket.close(); return true; }
-        bool close_stream() override; // close the connection
+        bool close_stream() override;
 
         inline bool isvalid() { return _socket.is_open(); }
 
@@ -54,5 +55,6 @@ namespace RVN
         Clock _clock;
         std::thread _io_thread;
     };
+    /* ====================================================================== */
 }
 #endif

@@ -3,6 +3,7 @@
 
 namespace RVN
 {
+    /* ====================================================================== */
     bool EventSource::open_stream()
     {
         _acceptor.async_accept(
@@ -18,7 +19,7 @@ namespace RVN
 
         return true;
     }
-
+    /* ---------------------------------------------------------------------- */
     bool EventSource::close_stream()
     {
         if (_socket.is_open()) { _socket.close(); }
@@ -29,7 +30,7 @@ namespace RVN
         // wait until it actually does
         _io_thread.join();
     }
-
+    /* ---------------------------------------------------------------------- */
     void EventSource::handle_accept(const asio::error_code& ec)
     {
         if (!ec)
@@ -37,7 +38,7 @@ namespace RVN
             async_read();
         }
     }
-
+    /* ---------------------------------------------------------------------- */
     void EventSource::handle_read(const asio::error_code& ec, uint32_t bytes)
     {
         const float time = _clock.now();
@@ -65,7 +66,7 @@ namespace RVN
             (void)close_stream();
         }
     }
-
+    /* ---------------------------------------------------------------------- */
     void EventSource::io_loop()
     {
         try
@@ -80,5 +81,5 @@ namespace RVN
             std::cerr << "Exception: " << e.what() << "\n";
         }
     }
-
+    /* ====================================================================== */
 }
