@@ -1,10 +1,10 @@
-//g++ -std=c++11 -pedantic-errors -Wall -Wextra -pthread -I. -I/home/scottie/Libraries/asio-1.12.2/include -o ./build/app/ravine_event_test ravine_event_source.cpp ravine_clock.cpp ravine_event_test.cpp
+//g++ -std=c++11 -DASIO_STANDALONE=1 -pedantic-errors -Wall -Wextra -pthread -I. -I/home/pi/Libraries/asio-1.12.2/include -o ./build/app/ravine_event_test ravine_event_source.cpp ravine_clock.cpp ravine_event_test.cpp
 #include <iostream>
 
 #include "ravine_utils.hpp"
 #include "ravine_event_source.hpp"
 
-#define port 65001
+#define port 65000
 
 int main()
 {
