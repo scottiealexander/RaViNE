@@ -58,20 +58,15 @@ namespace RVN
             this->_working_length = len;
 
             this->_time = packet->timestamp();
-            _empty = false;
         }
-
-        inline bool has_data() const { return !_empty; }
-        inline void mark_empty() { _empty = true; }
 
         inline length_t length() const override { return _working_length; }
 
     private:
         length_t _working_length;
-        bool _empty = true;
     };
     /* ====================================================================== */
-    class DataFileSink : public Sink<AudioPacket>
+    class DataFileSink : public Sink<AudioPacket>, Sink<EventPacket>
     {
     public:
         DataFileSink(const char*, int);
@@ -79,25 +74,33 @@ namespace RVN
         bool open_stream() override;
         bool close_stream() override;
         void process(AudioPacket*, length_t) override;
-        //void process(EventPacket*, length_t) override;
+        void process(EventPacket*, length_t) override;
 
-        inline bool persist()
-        {
-            return _state_continue.test_and_set(std::memory_order_acquire);
-        }
 
         inline bool isvalid() const { return !_error; }
         inline const std::string& get_error_msg() const { return _error_msg; }
 
     private:
+        inline bool persist()
+        {
+            return _state_continue.test_and_set(std::memory_order_acquire);
+        }
+
+        inline bool have_event()
+        {
+            return !_no_event.test_and_set(std::memory_order_acquire);
+        }
+
         void set_error_msg(const char* msg)
         {
             _error_msg = msg;
             _error = true;
         }
 
+        void process_audio_queue(int32_t&);
+        void process_event_queue(int32_t&);
+
         int32_t write_header();
-        void write_chunk(int32_t&, int32_t&);
         void write_loop();
 
     private:
@@ -111,6 +114,9 @@ namespace RVN
 
         std::atomic_flag _state_continue = ATOMIC_FLAG_INIT;
         std::thread _write_thread;
+
+        std::atomic_flag _no_event = ATOMIC_FLAG_INIT;
+        EventPacket _event_packet;
 
         //std::atomic_flag _qout_busy = ATOMIC_FLAG_INIT;
         //std::queue<EventPacket*> _qout;

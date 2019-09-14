@@ -22,8 +22,14 @@ namespace RVN
             _socket(_io) {}
 
         bool open_stream() override;
-        inline bool start_stream() override { return true; }
-        inline bool stop_stream() override { _socket.close(); return true; }
+        inline bool start_stream() override { return open_sink_stream(); }
+
+        inline bool stop_stream() override
+        {
+            _socket.close();
+            return close_sink_stream();
+        }
+
         bool close_stream() override;
 
         inline bool isready() { return _socket.is_open(); }

@@ -9,6 +9,10 @@ namespace RVN
     DataFileSink::DataFileSink(const char* filepath, int frames_per_buffer) :
         _audio_stream(8), _error(false), _filepath(filepath)
     {
+        // on init, we do not have any events, set no_event flag to true
+        // as false indicates the presence of an event
+        _no_event.test_and_set(std::memory_order_acquire);
+
         if (_audio_stream.isvalid())
         {
             printf("[INFO]: audio stream appears valid\n");
@@ -65,24 +69,55 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     void DataFileSink::process(AudioPacket* packet, length_t /* bytes */)
     {
-        // if we have a packet that is ready to be loaded, load it, otherwise
-        // drop the frame?
-        if (_audio_stream.load_ready())
+        // make sure we are still accepting packets
+        if (persist())
         {
-            AudioBuffer* buf = _audio_stream.pop_load();
-            buf->copy(packet);
-            _audio_stream.push_load(buf);
+            // if we have a packet that is ready to be loaded, load it, otherwise
+            // drop the frame?
+            if (_audio_stream.load_ready())
+            {
+                AudioBuffer* buf = _audio_stream.pop_load();
+                buf->copy(packet);
+                _audio_stream.push_load(buf);
+            }
+            else
+            {
+                printf("[ERROR]: dropped audio packet...\n");
+            }
         }
         else
         {
-            printf("[ERROR]: dropped audio packet...\n");
+            // leave continue flag in the false state, drop the packet
+            _state_continue.cleaer();
         }
     }
     /* ---------------------------------------------------------------------- */
-    //void DataFileSink::process(EventPacket* packet, length_t bytes)
-    //{
-
-    //}
+    void DataFileSink::process(EventPacket* packet, length_t bytes)
+    {
+        // make sure we are still accepting packets
+        if (persist())
+        {
+            // events are by definition (in this sytem) "rare", so have_event()
+            // should, in theory, never be true when this gets called, but we'll
+            // check just to be safe
+            if (!have_event())
+            {
+                // copy the packet and indicate that we have an event
+                _event_packet = packet;
+                _no_event.clear();
+            }
+            else
+            {
+                // NOTE: this is not thread safe! (but should also never happen
+                // in practice)
+                printf("[ERROR]: dropped event packet...\n");
+            }
+        else
+        {
+            // leave continue flag in the false state, drop the packet
+            _state_continue.cleaer();
+        }
+    }
     /* ---------------------------------------------------------------------- */
     int32_t DataFileSink::write_header()
     {
@@ -98,33 +133,30 @@ namespace RVN
             //    0x07 -> 0111 -> int32
             //    0x0f -> 1111 -> float32
 
-            // 1 channel,  ids = [0x01], types = [0x0f], packet count (int32)
-            const uint8_t hdr[7] = {0x01, 0x01, 0x0f, 0x00, 0x00, 0x00, 0x00};
-            _file.write(reinterpret_cast<const char*>(hdr), 7);
-            offset = 3;
+            const uint8_t hdr[9] =
+                {
+                    0x02, // 2 channels
+                    0x01, // id of channel 1 (audio channel)
+                    0x02, // id of channel 2 (event channel)
+                    0x0f, // d-type of channel 1 (float)
+                    0x01, // d-type of channel 2 (uint8_t)
+                    0x00, 0x00, 0x00, 0x00 // place holder for int32 packet count
+                };
+
+            _file.write(reinterpret_cast<const char*>(hdr), sizeof (hdr));
+            offset = sizeof (hdr) - sizeof (int32_t);
         }
+
         return offset;
     }
     /* ---------------------------------------------------------------------- */
-    void DataFileSink::write_chunk(int32_t& count, int32_t& /*zero*/)
+    void DataFileSink::process_audio_queue(int32_t& count)
     {
         static const uint8_t id = 0x01;
 
         while (_audio_stream.unload_ready())
         {
             AudioBuffer* buf = _audio_stream.unload();
-
-            //int n = 0;
-            //for (int k = 0; k < buf->length(); ++k)
-            //{
-                //if (buf->data()[k] == 0.0f) { ++n; }
-            //}
-
-            //if (n == buf->length())
-            //{
-                //++zero;
-                //printf("[WARNING]: zero buffer @ %.10f\n", buf->timestamp());
-            //}
 
             int32_t len = buf->length();
             float time = buf->timestamp();
@@ -137,11 +169,31 @@ namespace RVN
             _file.write(reinterpret_cast<char*>(&len), sizeof (len));
             _file.write(reinterpret_cast<char*>(buf->data()), len * sizeof (float));
 
-
-            buf->mark_empty();
-
             // buffer goes back in the cycle to be reloaded with data
             _audio_stream.reload(buf);
+
+            ++count;
+        }
+    }
+    /* ---------------------------------------------------------------------- */
+    void DataFileSink::process_event_queue(int32_t& count)
+    {
+        static const uint8_t id = 0x02;
+        static const int32_t len = 1;
+
+        if (have_event())
+        {
+            const float time = _event_packet.timestamp();
+
+            _file.write(reinterpret_cast<const char*>(&id), sizeof (id));
+            _file.write(reinterpret_cast<const char*>(&time), sizeof (time));
+            _file.write(reinterpret_cast<const char*>(&len), sizeof (len));
+
+            _file.write(_event_packet.data(), sizeof (uint8_t));
+
+            // set no_event back to true (releases _event_packet and indicates
+            // readiness to accept another event)
+            _no_event.test_and_set(std::memory_order_acquire);
 
             ++count;
         }
@@ -168,11 +220,11 @@ namespace RVN
         }
 
         int32_t packet_count = 0;
-        int32_t zero_count = 0;
 
         while (persist())
         {
-            write_chunk(packet_count, zero_count);
+            process_audio_queue(packet_count);
+            process_event_queue(packet_count);
 
             // give some time to other processes
             sleep_ms(10);
@@ -180,7 +232,8 @@ namespace RVN
 
         // make sure to write any buffers that remain in the output queue to
         // the file
-        write_chunk(packet_count, zero_count);
+        process_audio_queue(packet_count);
+        process_event_queue(packet_count);
 
         // seek to the location where we should insert the packet count
         _file.seekp(count_offset, _file.beg);
@@ -188,7 +241,7 @@ namespace RVN
 
         _file.close();
 
-        printf("[STATS]: total packets: %d, zero packets: %d\n", packet_count, zero_count);
+        printf("[STATS]: total packets: %d\n", packet_count);
     }
     /* ---------------------------------------------------------------------- */
 }
