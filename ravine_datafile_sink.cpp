@@ -7,7 +7,7 @@ namespace RVN
 {
     /* ---------------------------------------------------------------------- */
     DataFileSink::DataFileSink(const char* filepath, int frames_per_buffer) :
-        _audio_stream(8), _error(false), _filepath(filepath)
+        _audio_stream(8), _filepath(filepath)
     {
         // on init, we do not have any events, set no_event flag to true
         // as false indicates the presence of an event
@@ -88,11 +88,11 @@ namespace RVN
         else
         {
             // leave continue flag in the false state, drop the packet
-            _state_continue.cleaer();
+            _state_continue.clear();
         }
     }
     /* ---------------------------------------------------------------------- */
-    void DataFileSink::process(EventPacket* packet, length_t bytes)
+    void DataFileSink::process(EventPacket* packet, length_t /* bytes */)
     {
         // make sure we are still accepting packets
         if (persist())
@@ -112,10 +112,11 @@ namespace RVN
                 // in practice)
                 printf("[ERROR]: dropped event packet...\n");
             }
+        }
         else
         {
             // leave continue flag in the false state, drop the packet
-            _state_continue.cleaer();
+            _state_continue.clear();
         }
     }
     /* ---------------------------------------------------------------------- */
@@ -189,7 +190,10 @@ namespace RVN
             _file.write(reinterpret_cast<const char*>(&time), sizeof (time));
             _file.write(reinterpret_cast<const char*>(&len), sizeof (len));
 
-            _file.write(_event_packet.data(), sizeof (uint8_t));
+            _file.write(
+                reinterpret_cast<const char*>(_event_packet.data()),
+                sizeof (uint8_t)
+            );
 
             // set no_event back to true (releases _event_packet and indicates
             // readiness to accept another event)

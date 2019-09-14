@@ -29,6 +29,9 @@ int main(int narg, const char** args)
         return -1;
     }
 
+    // filter first, so we can get the frames_per_buffer
+    RVN::AudioFilter filter;
+
     RVN::DataFileSink sink("./testfile.rdf", filter.frames_per_buffer);
 
     if (!sink.isvalid())
@@ -54,8 +57,6 @@ int main(int narg, const char** args)
         std::cout << "[ERROR]: Failed to open stream" << std::endl;
         return -1;
     }
-
-    RVN::AudioFilter filter;
 
     // while we wait for event_source connection, set up audio system:
     // register the file sink with the audio filter / source

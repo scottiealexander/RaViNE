@@ -17,7 +17,7 @@ ifndef ASIO_PATH
 ASIO_PATH := /home/pi/Libraries/asio-1.12.2
 endif
 
-ASIO_INCLUDE := $(ASIO_APTH)/include
+ASIO_INCLUDE := $(ASIO_PATH)/include
 
 CXX      := -g++
 CXXFLAGS := -pedantic-errors -Wall -Wextra -std=c++11 -L$(PA_LIBS)
@@ -30,7 +30,7 @@ BUILD    := ./build
 OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/app
 TARGET   := ravine_audio_test
-INCLUDE  := -I./ -I$(PA_INCLUDE) -I$(PA_COMMON) -I$(ASIO_PATH)
+INCLUDE  := -I./ -I$(PA_INCLUDE) -I$(PA_COMMON) -I$(ASIO_INCLUDE)
 SRC      :=                                 \
 	$(wildcard ./ravine_pink_noise.cpp)     \
 	$(wildcard ./ravine_spike_waveform.cpp) \

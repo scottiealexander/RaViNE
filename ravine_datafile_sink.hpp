@@ -66,7 +66,7 @@ namespace RVN
         length_t _working_length;
     };
     /* ====================================================================== */
-    class DataFileSink : public Sink<AudioPacket>, Sink<EventPacket>
+    class DataFileSink : public Sink<AudioPacket>, public Sink<EventPacket>
     {
     public:
         DataFileSink(const char*, int);
@@ -76,7 +76,7 @@ namespace RVN
         void process(AudioPacket*, length_t) override;
         void process(EventPacket*, length_t) override;
 
-
+        inline bool isopen() const { return _isopen; }
         inline bool isvalid() const { return !_error; }
         inline const std::string& get_error_msg() const { return _error_msg; }
 
@@ -106,7 +106,9 @@ namespace RVN
     private:
         DataConveyor<AudioBuffer> _audio_stream;
 
-        bool _error;
+        bool _isopen = false;
+
+        bool _error = false;
         std::string _error_msg;
 
         const std::string _filepath;
