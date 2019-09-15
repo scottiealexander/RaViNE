@@ -8,9 +8,9 @@
 #include <atomic>
 #include <thread>
 
+#include "ravine_packets.hpp"
 #include "ravine_sink_base.hpp"
 #include "ravine_source_base.hpp"
-#include "ravine_packets.hpp"
 
 // conversion factor b/t milliseconds and v4l2 100us exposure units
 #define V4L2_TIME_MS 10
@@ -65,8 +65,15 @@ namespace RVN
 
         inline void set_error_msg(const std::string& msg)
         {
-            _err_msg = msg;
-            _isvalid = false;
+            if (isvalid())
+            {
+                _err_msg = msg;
+                _isvalid = false;
+            }
+            else
+            {
+                _err_msg.append(" " + msg);
+            }
         }
 
         inline void reset_error_state()

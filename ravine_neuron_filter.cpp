@@ -4,15 +4,23 @@
 #include "ravine_utils.hpp"
 #include "ravine_neuron_filter.hpp"
 
-namespace RNV
+namespace RVN
 {
     /* ---------------------------------------------------------------------- */
-    NeuronFilter::NeuronFilter(const char* rf_file, int x, int y)
+    NeuronFilter::NeuronFilter(const char* rf_file, int x, int y, int nbuf) :
+        _isvalid(true)
     {
         int width, height;
         if (read_rf_file(rf_file, width, height))
         {
             _win = {x, y, width, height};
+
+            // we're not yet parallel, so no need to check busy flags
+            allocate_buffers(nbuf);
+        }
+        else
+        {
+            set_error_msg("Failed to read rf file");
         }
     }
     /* ---------------------------------------------------------------------- */
@@ -25,37 +33,37 @@ namespace RNV
     /* ---------------------------------------------------------------------- */
     bool NeuronFilter::open_stream()
     {
-        if (has_valid_sink())
-        {
-            _sink->open_stream();
-        }
+        open_sink_stream();
+        return start_stream();
     }
     /* ---------------------------------------------------------------------- */
     bool NeuronFilter::start_stream()
     {
-        if (!is_open())
+        if (!is_open() && isvalid())
         {
-            // luanch _process_thread
+            _process_thread = std::thread(&NeuronFilter::forward_loop, this);
             _open = true;
         }
+        return isvalid();
     }
     /* ---------------------------------------------------------------------- */
     bool NeuronFilter::stop_stream()
     {
         if (is_open())
         {
-            // join _process_thread
+            _state_continue.clear();
             _open = false;
         }
-
+        return isvalid();
     }
     /* ---------------------------------------------------------------------- */
     bool NeuronFilter::close_stream()
     {
-        if (has_valid_sink())
-        {
-            _sink->close_stream();
-        }
+        if (is_open()) { (void)stop_stream(); }
+        _process_thread.join();
+        close_sink_stream();
+
+        return isvalid();
     }
     /* ---------------------------------------------------------------------- */
     void NeuronFilter::allocate_buffers(int n)
@@ -64,11 +72,11 @@ namespace RNV
         {
             // this should only be called from a constructor so no need
             // with wait on _qin_busy
-            _qin.push(new FloatPacket(0.f0));
+            _qin.push(new FloatPacket());
         }
     }
     /* ---------------------------------------------------------------------- */
-    void NeuronFilter::filter(YUYVImagePacket* img, length_t bytes, float& act)
+    void NeuronFilter::filter(YUYVImagePacket* packet, length_t bytes, float& act)
     {
         int32_t inc = 0;
 
@@ -77,12 +85,12 @@ namespace RNV
 
         const uint8_t* data_in = packet->data();
 
-        const int first_col = _win->col * 2;
-        const int last_col = first_col + (_win->width*2);
+        const int first_col = _win.col * 2;
+        const int last_col = first_col + (_win.width*2);
 
-        const int last_row = _win->row + _win->height;
+        const int last_row = _win.row + _win.height;
 
-        for (int k = _win->row; k < last_row; ++k)
+        for (int k = _win.row; k < last_row; ++k)
         {
             for (int j = first_col; j < last_col; j+=2, ++inc)
             {
@@ -137,7 +145,7 @@ namespace RNV
                 if (width > 0 && height > 0 && white < 256)
                 {
                     _rf = new uint8_t[width*height];
-                    ifs.read(_rf, width*height);
+                    ifs.read(reinterpret_cast<char*>(_rf), width*height);
                     if (ifs) { success = true; }
                 }
             }
@@ -168,7 +176,7 @@ namespace RNV
 
                 // process input? or forward to audio thread? or should this
                 // all happen in the audio thread?
-
+                printf("[INFO]: sending value \"%f\"\n", ptr->data());
 
                 // reuse the packet once _qin is free
                 while (wait_flag(_qin_busy)) { sleep_ms(1); }

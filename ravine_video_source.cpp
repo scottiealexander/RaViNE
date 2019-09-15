@@ -18,7 +18,7 @@
 #include <linux/videodev2.h>
 
 #ifdef DEBUG
-#undef DEBUF
+#undef DEBUG
 #endif
 
 #ifdef DEBUG
@@ -65,10 +65,6 @@ namespace RVN
             {
                 _data = (uint8_t*)ptr;
                 _length = (length_t)length;
-            }
-            else
-            {
-                printf("MMAP failed\n");
             }
         }
     }
@@ -413,7 +409,7 @@ namespace RVN
                 //_buffers.push_back(new MMBuffer(_fd, buf.m.offset, buf.length));
 
 
-                if (_buffers[k]->is_empty())
+                if (_buffers[k]->length() < 1)
                 {
                     set_error_msg("Failed to mmap buffer");
                     break;
@@ -472,7 +468,7 @@ namespace RVN
             {
                 set_error_msg("Failed to start streaming");
             }
-            else
+            else if(open_sink_stream())
             {
                 printf("[INFO]: launching stream\n");
 
@@ -484,6 +480,10 @@ namespace RVN
 
                 // launch the actual frame stream
                 _stream_thread = std::thread(&V4L2::stream, this);
+            }
+            else
+            {
+                set_error_msg("Failed to open sink stream");
             }
         }
 
@@ -500,14 +500,7 @@ namespace RVN
         timeout.tv_sec = 5;
         timeout.tv_usec = 0;
 
-#ifndef DEBUG
-        if (!_sink->open_stream())
-        {
-            set_error_msg("Failed to open sink stream");
-            return;
-        }
-        printf("[INFO]: sink stream is open\n");
-#else
+#ifdef DEBUG
         printf("[INFO]: allocating copy gray buffer, %d x %d\n", _width, _height);
         uint8_t* gray = new uint8_t[_width*_height];
         printf("[INFO]: success allocating gray\n");
@@ -519,12 +512,12 @@ namespace RVN
 
         timespec t1, t2;
 
-        printf("[INFO]: entering main stream loop\n");
+        //printf("[INFO]: entering main stream loop\n");
         while (persist() && (!error))
         {
             bool frame_ready = false;
 
-            printf("[INFO]: waiting for next frame\n");
+            //printf("[INFO]: waiting for next frame\n");
             while (!frame_ready)
             {
                 FD_ZERO(&fds);
@@ -563,7 +556,7 @@ namespace RVN
 
             if (frame_ready)
             {
-                printf("[INFO]: got frame %d\n", kframe);
+                //printf("[INFO]: got frame %d\n", kframe);
 
                 v4l2_buffer buf = {};
 
@@ -582,14 +575,14 @@ namespace RVN
                 }
                 else if (buf.index < _buffers.size())
                 {
-                    printf("[INFO]: appears we have a valid buffer at %d\n", buf.index);
+                    //printf("[INFO]: appears we have a valid buffer at %d\n", buf.index);
 
                     // in a YUYV frame, every other sample is luminance, so
                     // total bytes is width x height x 2, so we send width and
                     // bytesused
 #ifndef DEBUG
                     // send to sink (this should be synchronous but fast)
-                    printf("[INFO]: forwrding buffer to sink...\n");
+                    //printf("[INFO]: forwrding buffer to sink...\n");
                     send_sink(_buffers[buf.index], buf.bytesused);
                     ++kframe;
 #else
@@ -631,21 +624,18 @@ namespace RVN
 
         if (error)
         {
-            printf("[INFO]: an error occured during streaming, will report\n");
+            //printf("[INFO]: an error occured during streaming, will report\n");
             set_error_msg(err_msg);
         }
-        else
-        {
-            printf("[INFO]: ending stream\n");
-            float dur = (float)(t2.tv_sec - t1.tv_sec) * 1000.0f +
-                (float)(t2.tv_nsec - t1.tv_nsec) / 1000000.0f;
-            printf("[INFO]: got %d frames in %f ms\n", kframe, dur);
-        }
+        //else
+        //{
+            //printf("[INFO]: ending stream\n");
+            //float dur = (float)(t2.tv_sec - t1.tv_sec) * 1000.0f +
+                //(float)(t2.tv_nsec - t1.tv_nsec) / 1000000.0f;
+            //printf("[INFO]: got %d frames in %f ms\n", kframe, dur);
+        //}
 
-#ifndef DEBUG
-        _sink->close_stream();
-        printf("[INFO]: closed sink stream\n");
-#else
+#ifdef DEBUG
         delete[] gray;
 #endif
     }
@@ -659,7 +649,12 @@ namespace RVN
 
         if (xioctl(_fd, VIDIOC_STREAMOFF, &type) < 0)
         {
-            set_error_msg("Failed to stop stream");
+            set_error_msg("Failed to stop vidioc stream");
+        }
+
+        if (!close_sink_stream())
+        {
+            set_error_msg("Failed to close sink stream");
         }
 
         return isvalid();
