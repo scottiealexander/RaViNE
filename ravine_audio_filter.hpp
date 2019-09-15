@@ -11,13 +11,14 @@ extern "C"
 }
 
 #include "ravine_clock.hpp"
-#include "ravine_filter_base.hpp"
+#include "ravine_packets.hpp"
 #include "ravine_pink_noise.hpp"
+#include "ravine_filter_base.hpp"
 #include "ravine_spike_waveform.hpp"
 
 namespace RVN
 {
-    class AudioFilter : public Filter<FloatPacket, AudioPacket>
+    class AudioFilter : public Filter<BoolPacket, AudioPacket>
     {
     public:
         AudioFilter();
@@ -28,7 +29,7 @@ namespace RVN
         bool stop_stream() override;
         bool close_stream() override;
 
-        void process(FloatPacket*, length_t) override;
+        void process(BoolPacket*, length_t) override { send_spike(); }
 
         inline void send_spike() { _no_spike.clear(); }
 

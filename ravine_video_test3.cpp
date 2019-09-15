@@ -4,7 +4,7 @@
 #include "ravine_utils.hpp"
 #include "ravine_packets.hpp"
 #include "ravine_video_source.hpp"
-//#include "ravine_audio_filter.hpp"
+#include "ravine_audio_filter.hpp"
 #include "ravine_neuron_filter.hpp"
 
 #define FRAMERATE 15
@@ -15,7 +15,7 @@
 #define LEFT 288 //WIDTH - 32
 #define TOP  208 //HEIGHT - 32
 /* ========================================================================= */
-int main(int narg, const char** args)
+int main()
 {
     const char* dev = "/dev/video0";
 
@@ -44,6 +44,16 @@ int main(int narg, const char** args)
         return -1;
     }
 
+    RVN::AudioFilter audio;
+
+    neuron.register_sink(&audio);
+
+    if (!neuron.has_valid_sink())
+    {
+        printf("[ERROR]: failed to register sink with source\n");
+        return -1;
+    }
+
     video.register_sink(&neuron);
 
     if (!video.has_valid_sink())
@@ -53,7 +63,7 @@ int main(int narg, const char** args)
     }
 
     printf("[OK]: everything seems to be working...\n");
-    return 0;
+    //return 0;
 
     if (!video.start_stream())
     {
@@ -62,7 +72,7 @@ int main(int narg, const char** args)
         return -1;
     }
 
-    RVN::sleep_ms(3000);
+    RVN::sleep_ms(5000);
 
     if (!video.stop_stream())
     {

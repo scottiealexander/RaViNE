@@ -82,7 +82,7 @@ namespace RVN
     {
         if (_data != nullptr)
         {
-            printf("[INFO]: un-mapping buffer\n");
+            //printf("[INFO]: un-mapping buffer\n");
             munmap((void*)_data, _length);
         }
     }
@@ -101,7 +101,7 @@ namespace RVN
         {
             if (_buffers[k] != nullptr)
             {
-                printf("[INFO]: deleteing buffer pointer\n");
+                //printf("[INFO]: deleteing buffer pointer\n");
                 delete _buffers[k];
             }
         }

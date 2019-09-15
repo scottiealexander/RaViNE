@@ -1,16 +1,30 @@
+
+#portaudio dependency
+ifndef PORTAUDIO_PATH
+PORTAUDIO_PATH := /home/pi/Libraries/portaudio
+endif
+
+PA_LIBS := $(PORTAUDIO_PATH)/lib/.libs
+PA_INCLUDE := $(PORTAUDIO_PATH)/include
+PA_COMMON := $(PORTAUDIO_PATH)/src/common
+
 CXX      := -g++
-CXXFLAGS := -pedantic-errors -Wall -Wextra -std=c++11
-LDFLAGS  := -lm -pthread
+CXXFLAGS := -pedantic-errors -Wall -Wextra -std=c++11 -L$(PA_LIBS)
+LDFLAGS  := -lm -pthread -lasound -lportaudio -lparingbuffer
 BUILD    := ./build
 OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/app
 TARGET   := ravine_video_test
-INCLUDE  := -I./
-SRC      :=                                \
-	$(wildcard ./ravine_packets.cpp)       \
-	$(wildcard ./ravine_video_source.cpp)  \
-	$(wildcard ./ravine_neuron_filter.cpp) \
-	$(wildcard ./ravine_video_test3.cpp)   \
+INCLUDE  := -I./ -I$(PA_INCLUDE) -I$(PA_COMMON)
+SRC      :=                                 \
+	$(wildcard ./ravine_packets.cpp)        \
+	$(wildcard ./ravine_clock.cpp)          \
+	$(wildcard ./ravine_pink_noise.cpp)     \
+	$(wildcard ./ravine_spike_waveform.cpp) \
+	$(wildcard ./ravine_video_source.cpp)   \
+	$(wildcard ./ravine_audio_filter.cpp)   \
+	$(wildcard ./ravine_neuron_filter.cpp)  \
+	$(wildcard ./ravine_video_test3.cpp)    \
 
 OBJECTS := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 

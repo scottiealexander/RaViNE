@@ -58,6 +58,7 @@ namespace RVN
     };
     /* ====================================================================== */
     typedef ScalarPacket<float> FloatPacket;
+    typedef Packet<bool> BoolPacket;
     /* ====================================================================== */
     class EventPacket : public Packet<uint8_t>
     {

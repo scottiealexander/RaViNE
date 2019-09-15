@@ -1,5 +1,7 @@
 #include <fstream>
 #include <string>
+#include <cstdio>
+#include <cmath>
 
 #include "ravine_utils.hpp"
 #include "ravine_neuron_filter.hpp"
@@ -7,8 +9,31 @@
 namespace RVN
 {
     /* ---------------------------------------------------------------------- */
+    float mean(const uint8_t* data, int length)
+    {
+        float mn = 0.0f;
+        for (int k = 0; k < length; ++k)
+        {
+            mn += data[k];
+        }
+        return mn / length;
+    }
+    /* ---------------------------------------------------------------------- */
+    float two_norm(const uint8_t* data, int length, float& mn)
+    {
+        mn = mean(data, length);
+        float mag = 0.0f;
+        for (int k = 0; k < length; ++k)
+        {
+            float tmp = ((float)data[k]) - mn;
+            mag += tmp*tmp;
+        }
+
+        return mag;
+    }
+    /* ---------------------------------------------------------------------- */
     NeuronFilter::NeuronFilter(const char* rf_file, int x, int y, int nbuf) :
-        _isvalid(true)
+        _isvalid(true), _rf_mag(0.0f)
     {
         int width, height;
         if (read_rf_file(rf_file, width, height))
@@ -26,13 +51,19 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     NeuronFilter::~NeuronFilter()
     {
+        printf("[NEURON]: deleating packet queues\n");
         delete_queue(_qin);
         delete_queue(_qout);
-        if (_rf != nullptr) { delete[] _rf; }
+        if (_rf != nullptr)
+        {
+            printf("[NEURON]: deleting _rf\n");
+            delete[] _rf;
+        }
     }
     /* ---------------------------------------------------------------------- */
     bool NeuronFilter::open_stream()
     {
+        printf("[NEURON]: opening stream\n");
         open_sink_stream();
         return start_stream();
     }
@@ -41,6 +72,9 @@ namespace RVN
     {
         if (!is_open() && isvalid())
         {
+            (void)persist();
+
+            printf("[NEURON]: launching process loop\n");
             _process_thread = std::thread(&NeuronFilter::forward_loop, this);
             _open = true;
         }
@@ -80,10 +114,16 @@ namespace RVN
     {
         int32_t inc = 0;
 
+        float frame_mag = 0.0f;
+        float xy = 0.0f;
+        float yi;
+
         // in YUYV, every other element is luminance channel
         const int row_length = packet->width() * 2;
 
         const uint8_t* data_in = packet->data();
+
+        float frame_mean = mean(data_in, bytes);
 
         const int first_col = _win.col * 2;
         const int last_col = first_col + (_win.width*2);
@@ -97,14 +137,20 @@ namespace RVN
                 int32_t idx = k * row_length + j;
                 if (idx < bytes)
                 {
-                    act += (float)(data_in[idx] * _rf[inc]);
+                    yi = ((float)data_in[idx]) - frame_mean;
+                    frame_mag += yi*yi;
+                    xy += yi * (((float)_rf[inc]) - _rf_mean);
                 }
             }
         }
+
+        const float mx = RVN_MAX(_rf_mag, frame_mag);
+        act = xy / mx / sqrt(RVN_MIN(_rf_mag, frame_mag) / mx);
     }
     /* ---------------------------------------------------------------------- */
     void NeuronFilter::process(YUYVImagePacket* packet, length_t bytes)
     {
+        //printf("[NEURON]: got packet\n");
         if (is_open())
         {
             // wait for use of the queue, this function needs to return asap
@@ -146,7 +192,13 @@ namespace RVN
                 {
                     _rf = new uint8_t[width*height];
                     ifs.read(reinterpret_cast<char*>(_rf), width*height);
-                    if (ifs) { success = true; }
+                    if (ifs)
+                    {
+                        success = true;
+
+                        // pre-calculate the mean and 2-norm of the rf
+                        _rf_mag = two_norm(_rf, width*height, _rf_mean);
+                    }
                 }
             }
         }
@@ -157,6 +209,8 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     void NeuronFilter::forward_loop()
     {
+        BoolPacket packet(true);
+
         // process input when available until we receive the terminate signal
         while (persist())
         {
@@ -171,12 +225,18 @@ namespace RVN
             // if a new packet is available, process
             if (_qout.size() > 0)
             {
+                const float time = _clock.now();
+
                 FloatPacket* ptr = pop_queue(_qout);
                 release_flag(_qout_busy);
 
-                // process input? or forward to audio thread? or should this
-                // all happen in the audio thread?
-                printf("[INFO]: sending value \"%f\"\n", ptr->data());
+                if (ptr->data() > _threshold)
+                {
+                    // process input? or forward to audio thread? or should this
+                    // all happen in the audio thread?
+                    printf("[INFO]: spike \"%f\" @ %f\n", ptr->data(), time);
+                    send_sink(&packet, 1);
+                }
 
                 // reuse the packet once _qin is free
                 while (wait_flag(_qin_busy)) { sleep_ms(1); }

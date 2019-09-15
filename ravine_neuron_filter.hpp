@@ -4,13 +4,13 @@
 #include <atomic>
 #include <queue>
 
+#include "ravine_clock.hpp"
 #include "ravine_packets.hpp"
 #include "ravine_filter_base.hpp"
-//#include "ravine_frame_buffer.hpp"
 
 namespace RVN
 {
-    class NeuronFilter : public Filter<YUYVImagePacket, FloatPacket>
+    class NeuronFilter : public Filter<YUYVImagePacket, BoolPacket>
     {
     public:
         NeuronFilter(const char* rf_file, int x, int y, int nbuf);
@@ -67,6 +67,9 @@ namespace RVN
         CropWindow _win;
         uint8_t* _rf = nullptr;
 
+        float _rf_mag;
+        float _rf_mean;
+
         std::atomic_flag _state_continue = ATOMIC_FLAG_INIT;
 
         std::atomic_flag _qin_busy = ATOMIC_FLAG_INIT;
@@ -76,6 +79,10 @@ namespace RVN
         std::queue<FloatPacket*> _qout;
 
         std::thread _process_thread;
+
+        Clock _clock;
+
+        static constexpr float _threshold = 0.2f;
 
     };
 }

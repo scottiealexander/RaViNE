@@ -126,7 +126,7 @@ namespace RVN
             (void)error_check(err);
         }
 
-        return isvalid();
+        return start_stream();
     }
     /* ---------------------------------------------------------------------- */
     bool AudioFilter::start_stream()
@@ -147,7 +147,7 @@ namespace RVN
                 set_error_msg("Failed to open sink stream");
             }
         }
-        return _stream_open;
+        return isvalid() && _stream_open;
     }
     /* ---------------------------------------------------------------------- */
     bool AudioFilter::stop_stream()
@@ -180,16 +180,16 @@ namespace RVN
         return error_check(Pa_CloseStream(_pa_stream)) && isvalid();
     }
     /* ---------------------------------------------------------------------- */
-    void AudioFilter::process(FloatPacket* packet, length_t /* bytes */)
-    {
-        // NOTE TODO FIXME WARNING ERROR: we should be receiving a BoolPacket
-        // from the neuron indicating a spike (in theory we don't even need
-        // to check, as the neuron should *ONLY* call process() to notify us
-        // of a spike...)
-        if (packet->data() > 0.0f)
-        {
-            send_spike();
-        }
-    }
+    //void AudioFilter::process(BoolPacket* /* packet */, length_t /* bytes */)
+    //{
+        //// NOTE TODO FIXME WARNING ERROR: we should be receiving a BoolPacket
+        //// from the neuron indicating a spike (in theory we don't even need
+        //// to check, as the neuron should *ONLY* call process() to notify us
+        //// of a spike...)
+        //if (packet->data() > 0.0f)
+        //{
+            //send_spike();
+        //}
+    //}
     /* ====================================================================== */
 }
