@@ -94,6 +94,8 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     void DataFileSink::process(EventPacket* packet, length_t /* bytes */)
     {
+        printf("[REC]: %d @ %f\n", packet->data(), packet->timestamp());
+
         // make sure we are still accepting packets
         if (persist())
         {
@@ -140,7 +142,7 @@ namespace RVN
                     0x01, // id of channel 1 (audio channel)
                     0x02, // id of channel 2 (event channel)
                     0x0f, // d-type of channel 1 (float)
-                    0x01, // d-type of channel 2 (uint8_t)
+                    0x02, // d-type of channel 2 (uint8_t)
                     0x00, 0x00, 0x00, 0x00 // place holder for int32 packet count
                 };
 
@@ -185,15 +187,12 @@ namespace RVN
         if (have_event())
         {
             const float time = _event_packet.timestamp();
+            const uint8_t data = _event_packet.data();
 
             _file.write(reinterpret_cast<const char*>(&id), sizeof (id));
             _file.write(reinterpret_cast<const char*>(&time), sizeof (time));
             _file.write(reinterpret_cast<const char*>(&len), sizeof (len));
-
-            _file.write(
-                reinterpret_cast<const char*>(_event_packet.data()),
-                sizeof (uint8_t)
-            );
+            _file.write(reinterpret_cast<const char*>(&data), sizeof (data));
 
             // set no_event back to true (releases _event_packet and indicates
             // readiness to accept another event)

@@ -47,9 +47,9 @@ namespace RVN
         {
             if (bytes > 0)
             {
-                //EventPacket packet(_buffer, time);
-                //send_sink(&packet, 1);
-                std::cout << "[REC]: " << (int)_buffer << " @ " << time << std::endl;
+                EventPacket packet(_buffer, time);
+                send_sink(&packet, 1);
+                //std::cout << "[REC]: " << (int)_buffer << " @ " << time << std::endl;
             }
 
             // if we get the close signal (255) we do *NOT* start another read
