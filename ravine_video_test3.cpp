@@ -28,7 +28,7 @@ int main()
         return -1;
     }
 
-    if (!video.initialize_buffers(4))
+    if (!video.initialize_buffers(16))
     {
         printf("[ERROR]: failed to init buffers\n");
         printf("[MSG]: %s\n", video.get_error_msg().c_str());
@@ -72,7 +72,7 @@ int main()
         return -1;
     }
 
-    RVN::sleep_ms(5000);
+    RVN::sleep_ms(8000);
 
     if (!video.stop_stream())
     {

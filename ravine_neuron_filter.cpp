@@ -112,6 +112,7 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     void NeuronFilter::filter(YUYVImagePacket* packet, length_t bytes, float& act)
     {
+        act = 0.0f;
         int32_t inc = 0;
 
         float frame_mag = 0.0f;
@@ -237,6 +238,12 @@ namespace RVN
                     printf("[INFO]: spike \"%f\" @ %f\n", ptr->data(), time);
                     send_sink(&packet, 1);
                 }
+                else
+                {
+                    printf("[INFO]: no spike - %f\n", ptr->data());
+                }
+
+                ptr->set_data(0.0f);
 
                 // reuse the packet once _qin is free
                 while (wait_flag(_qin_busy)) { sleep_ms(1); }
