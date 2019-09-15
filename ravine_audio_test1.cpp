@@ -96,16 +96,16 @@ int main(int narg, const char** args)
         RVN::sleep_ms(100);
     }
 
-    // generate some pink noise data...
-    RVN::sleep_ms(2000);
+    //// generate some pink noise data...
+    //RVN::sleep_ms(2000);
 
-    //for (int k = 0; k < 4; ++k)
-    //{
-        //RVN::sleep_ms(250);
-        //filter.send_spike();
-    //}
+    for (int k = 0; k < 4; ++k)
+    {
+        RVN::sleep_ms(250);
+        filter.send_spike();
+    }
 
-    //RVN::sleep_ms(250);
+    RVN::sleep_ms(250);
 
     if (!filter.stop_stream())
     {
