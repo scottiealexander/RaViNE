@@ -1,28 +1,9 @@
-#include <queue>
+
+#include "ravine_utils.hpp"
 #include "ravine_frame_buffer.hpp"
 
 namespace RVN
 {
-    /* ====================================================================== */
-    FrameBuffer* pop_queue(std::queue<FrameBuffer*>& q)
-    {
-        T* ptr = q.front();
-        q.pop();
-        return ptr;
-    }
-    /* ---------------------------------------------------------------------- */
-    void delete_queue(std::queue<FrameBuffer*> q)
-    {
-        for (int k = 0; k < q.size(); ++k)
-        {
-            FrameBuffer* tmp = pop_queue(q);
-            if (tmp != nullptr)
-            {
-                // proper deconstructor is the base class one
-                delete tmp;
-            }
-        }
-    }
     /* ====================================================================== */
     FrameBuffer::~FrameBuffer()
     {

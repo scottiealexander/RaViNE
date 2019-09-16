@@ -52,8 +52,5 @@ namespace RVN
         CropWindow* _win;
     };
     /* ====================================================================== */
-    FrameBuffer* pop_queue(std::queue<FrameBuffer*>& q);
-    void delete_queue(std::queue<FrameBuffer*> q);
-    /* ====================================================================== */
 }
 #endif
