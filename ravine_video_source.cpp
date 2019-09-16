@@ -452,7 +452,7 @@ namespace RVN
             }
         }
 
-        printf("[INFO]: buffers appear to be queued\n");
+        printf("[VIDEO]: buffers appear to be queued\n");
 
         if (isvalid())
         {
@@ -464,7 +464,7 @@ namespace RVN
             }
             else if(open_sink_stream())
             {
-                printf("[INFO]: launching stream\n");
+                printf("[VIDEO]: launching stream\n");
 
                 // by calling persist() we set the _state_continue flag to true
                 // (reguardless of it's current state which should start false)
@@ -612,16 +612,20 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     bool V4L2::stop_stream()
     {
+        printf("[VIDEO]: sending stop signal to process thread\n");
         send_stop();
+        printf("[VIDEO]: joining process thread\n");
         _stream_thread.join();
 
         v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
+        printf("[VIDEO]: turing stream off\n");
         if (xioctl(_fd, VIDIOC_STREAMOFF, &type) < 0)
         {
             set_error_msg("Failed to stop vidioc stream");
         }
 
+        printf("[VIDEO]: closing sink stream\n");
         if (!close_sink_stream())
         {
             set_error_msg("Failed to close sink stream");

@@ -33,7 +33,7 @@ namespace RVN
     }
     /* ---------------------------------------------------------------------- */
     NeuronFilter::NeuronFilter(const char* rf_file, int x, int y, int nbuf) :
-        _isvalid(true), _rf_mag(0.0f)
+        _open(false), _isvalid(true), _rf_mag(0.0f)
     {
         int width, height;
         if (read_rf_file(rf_file, width, height))
@@ -43,6 +43,8 @@ namespace RVN
 
             // we're not yet parallel, so no need to check busy flags
             allocate_buffers(nbuf);
+
+            printf("[NEURON]: %d buffers allocated\n", _qin.size());
         }
         else
         {
@@ -71,6 +73,7 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     bool NeuronFilter::start_stream()
     {
+        printf("[NEURON]: starting stream\n");
         if (!is_open() && isvalid())
         {
             (void)persist();
@@ -79,7 +82,11 @@ namespace RVN
             _process_thread = std::thread(&NeuronFilter::forward_loop, this);
             _open = true;
         }
-        return isvalid();
+        else
+        {
+            printf("[NEURON]: failed starting stream\n");
+        }
+        return isvalid() && is_open();
     }
     /* ---------------------------------------------------------------------- */
     bool NeuronFilter::stop_stream()
@@ -94,8 +101,11 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     bool NeuronFilter::close_stream()
     {
+        printf("[NEURON]: stopping stream\n");
         if (is_open()) { (void)stop_stream(); }
         _process_thread.join();
+
+        printf("[NEURON]: closing sink stream\n");
         close_sink_stream();
 
         return isvalid();
@@ -236,13 +246,13 @@ namespace RVN
                 {
                     // process input? or forward to audio thread? or should this
                     // all happen in the audio thread?
-                    printf("[INFO]: spike \"%f\" @ %f\n", ptr->data(), time);
+                    //printf("[NEURON]: spike \"%f\" @ %f\n", ptr->data(), time);
                     send_sink(&packet, 1);
                 }
-                else
-                {
-                    printf("[INFO]: no spike - %f\n", ptr->data());
-                }
+                //else
+                //{
+                    //printf("[NEURON]: no spike - %f\n", ptr->data());
+                //}
 
                 ptr->set_data(0.0f);
 

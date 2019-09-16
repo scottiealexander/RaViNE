@@ -14,6 +14,12 @@ namespace RVN
         virtual bool stop_stream() = 0;
         virtual bool close_stream() = 0;
 
+        inline Sink<PacketType>& operator>>(Sink<PacketType>* sink)
+        {
+            register_sink(sink);
+            return *sink;
+        }
+
         inline void register_sink(Sink<PacketType>* sink)
         {
             if (!has_valid_sink())
@@ -38,6 +44,7 @@ namespace RVN
             if (has_valid_sink()) { return _sink->open_stream(); }
             return true;
         }
+
         inline bool close_sink_stream()
         {
             if (has_valid_sink()) { return _sink->close_stream(); }

@@ -139,6 +139,7 @@ namespace RVN
                 // open the audio stream
                 if (error_check(Pa_StartStream(_pa_stream)))
                 {
+                    printf("[AUDIO]: stream started\n");
                     _stream_open = true;
                 }
             }

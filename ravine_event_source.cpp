@@ -20,7 +20,7 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     bool EventSource::close_stream()
     {
-        if (_socket.is_open()) { _socket.close(); }
+        if (_socket.is_open()) { (void)stop_stream(); }
 
         // signal to the io_context that it should end
         _io.stop();

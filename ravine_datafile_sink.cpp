@@ -15,14 +15,14 @@ namespace RVN
 
         if (_audio_stream.isvalid())
         {
-            printf("[INFO]: audio stream appears valid\n");
+            printf("[FILE]: audio stream appears valid\n");
 
             // construct a temporary buffer that will be cloned to fill the
             // buffers in the DataConveyor _audio_stream
             AudioBuffer temp(frames_per_buffer);
             temp.fill(0.0f);
 
-            printf("[INFO]: cloning buffer of size %d, should be %d\n", temp.length(), frames_per_buffer);
+            printf("[FILE]: cloning buffer of size %d, should be %d\n", temp.length(), frames_per_buffer);
 
             if (!_audio_stream.fill(temp))
             {
@@ -30,14 +30,14 @@ namespace RVN
             }
             else
             {
-                printf("[INFO]: audio stream filled from clone\n");
+                printf("[FILE]: audio stream filled from clone\n");
             }
         }
     }
     /* ---------------------------------------------------------------------- */
     DataFileSink::~DataFileSink()
     {
-        printf("[INFO]: ~DataFileSink\n");
+        printf("[FILE]: ~DataFileSink\n");
     }
     /* ---------------------------------------------------------------------- */
     bool DataFileSink::open_stream()
@@ -45,10 +45,10 @@ namespace RVN
         if (isvalid() && !isopen())
         {
             // indicate that we should continue streaming to file...
-            printf("[INFO]: setting persist flag to true\n");
+            printf("[FILE]: setting persist flag to true\n");
             _state_continue.test_and_set();
 
-            printf("[INFO]: Starting write thread!\n");
+            printf("[FILE]: Starting write thread!\n");
             _write_thread = std::thread(&DataFileSink::write_loop, this);
             this->_isopen = true;
         }
@@ -57,7 +57,7 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     bool DataFileSink::close_stream()
     {
-        printf("[INFO]: Joining write thread\n");
+        printf("[FILE]: Joining write thread\n");
         if (isopen())
         {
             _state_continue.clear();
@@ -94,7 +94,7 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     void DataFileSink::process(EventPacket* packet, length_t /* bytes */)
     {
-        printf("[REC]: %d @ %f\n", packet->data(), packet->timestamp());
+        //printf("[REC]: %d @ %f\n", packet->data(), packet->timestamp());
 
         // make sure we are still accepting packets
         if (persist())
