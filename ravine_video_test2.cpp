@@ -4,7 +4,7 @@
 #include "ravine_utils.hpp"
 #include "ravine_packets.hpp"
 #include "ravine_file_sink.hpp"
-#include "ravine_test_filter.hpp"
+//#include "ravine_test_filter.hpp"
 #include "ravine_video_source.hpp"
 
 #define FRAMERATE 15
@@ -47,11 +47,11 @@ int main(int narg, const char** args)
 
     RVN::FileSink sink(crop, 4);
 
-    RVN::TestFilter filter;
+    //RVN::TestFilter filter;
 
-    filter.register_sink(&sink);
+    //filter.register_sink(&sink);
 
-    source.register_sink(&filter);
+    source.register_sink(&sink);
 
     if (!source.has_valid_sink())
     {
@@ -66,7 +66,7 @@ int main(int narg, const char** args)
         return -1;
     }
 
-    sleep_ms(3000);
+    RVN::sleep_ms(8000);
 
     if (!source.stop_stream())
     {
