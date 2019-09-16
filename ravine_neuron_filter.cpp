@@ -246,13 +246,13 @@ namespace RVN
                 {
                     // process input? or forward to audio thread? or should this
                     // all happen in the audio thread?
-                    //printf("[NEURON]: spike \"%f\" @ %f\n", ptr->data(), time);
+                    printf("[NEURON]: spike \"%f\" @ %f\n", ptr->data(), time);
                     send_sink(&packet, 1);
                 }
-                //else
-                //{
-                    //printf("[NEURON]: no spike - %f\n", ptr->data());
-                //}
+                else
+                {
+                    printf("[NEURON]: no spike - %f\n", ptr->data());
+                }
 
                 ptr->set_data(0.0f);
 

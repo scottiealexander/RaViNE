@@ -72,23 +72,23 @@ int main(int narg, const char** args)
         return -1;
     }
 
-    //RVN::EventSource events(port);
+    RVN::EventSource events(port);
 
-    //// prep the event source -> datafile sink stream
-    //events.register_sink(&datafile);
+    // prep the event source -> datafile sink stream
+    events.register_sink(&datafile);
 
-    //if (!events.has_valid_sink())
-    //{
-        //printf("[ERROR]: failed to register sink for event source\n");
-        //return -1;
-    //}
+    if (!events.has_valid_sink())
+    {
+        printf("[ERROR]: failed to register sink for event source\n");
+        return -1;
+    }
 
-    //// start accepting connections asap!
-    //if (!events.open_stream())
-    //{
-        //printf("[ERROR]: Failed to open stream\n");
-        //return -1;
-    //}
+    // start accepting connections asap!
+    if (!events.open_stream())
+    {
+        printf("[ERROR]: Failed to open stream\n");
+        return -1;
+    }
 
     // while we wait for event_source connection, set up audio system:
     // register the file sink with the audio filter / source
@@ -118,18 +118,18 @@ int main(int narg, const char** args)
 
     printf("[MAIN]: everything seems to be working...\n");
 
-    //if (!events.start_stream())
-    //{
-        //printf("[ERROR]: failed to start event stream\n");
-        //return -1;
-    //}
+    if (!events.start_stream())
+    {
+        printf("[ERROR]: failed to start event stream\n");
+        return -1;
+    }
 
-    ////all ready (hopefully..?) wait for connection from our external event
-    ////generator
-    //while (!events.isready())
-    //{
-        //RVN::sleep_ms(10);
-    //}
+    //all ready (hopefully..?) wait for connection from our external event
+    //generator
+    while (!events.isready())
+    {
+        RVN::sleep_ms(10);
+    }
 
     if (!video.start_stream())
     {
@@ -139,12 +139,12 @@ int main(int narg, const char** args)
     }
 
     printf("[MAIN]: entering main loop!\n");
-    //while (events.still_running())
-    //{
-        //RVN::sleep_ms(100);
-    //}
+    while (events.still_running())
+    {
+        RVN::sleep_ms(100);
+    }
 
-    RVN::sleep_ms(30000);
+    //RVN::sleep_ms(30000);
 
     printf("[MAIN]: exiting main loop!\n");
 
@@ -170,12 +170,12 @@ int main(int narg, const char** args)
         //RVN::sleep_ms(500);
     //}
 
-    //printf("[MAIN]: closing event stream!\n");
-    //if (!events.close_stream())
-    //{
-        //printf("[ERROR]: Failed to close event stream\n");
-        //return -1;
-    //}
+    printf("[MAIN]: closing event stream!\n");
+    if (!events.close_stream())
+    {
+        printf("[ERROR]: Failed to close event stream\n");
+        return -1;
+    }
 
     return 0;
 }
