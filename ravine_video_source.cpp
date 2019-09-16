@@ -17,14 +17,7 @@
 
 #include <linux/videodev2.h>
 
-#ifdef DEBUG
-#undef DEBUG
-#endif
-
-#ifdef DEBUG
-#include "ravine_image_utils.hpp"
-#endif
-
+#include "ravine_clock.hpp"
 #include "ravine_utils.hpp"
 #include "ravine_video_source.hpp"
 
@@ -115,6 +108,7 @@ namespace RVN
         if (_fd < 0)
         {
             set_error_msg("Failed to open device");
+            perror("[PERROR]: ");
         }
         else if (verify_capabilities() && set_pixel_format())
         {
@@ -496,19 +490,15 @@ namespace RVN
 
         fd_set fds;
 
-        timeval timeout;
+        timeval timeout
         timeout.tv_sec = 5;
         timeout.tv_usec = 0;
-
-#ifdef DEBUG
-        printf("[INFO]: allocating copy gray buffer, %d x %d\n", _width, _height);
-        uint8_t* gray = new uint8_t[_width*_height];
-        printf("[INFO]: success allocating gray\n");
-#endif
 
         int kframe = 0;
         bool error = false;
         std::string err_msg;
+
+        Clock clock;
 
         timespec t1, t2;
 
@@ -527,9 +517,14 @@ namespace RVN
 
                 if (r == 0)
                 {
-                    // timed out
-                    error = true;
-                    err_msg = "Select timed out waiting for frame";
+                    // in testing, timeouts actually apear not to be a big deal,
+                    // occuring ~1 per 8 seconds (@ 15 fps, 360 x 240)
+                    printf("[TIMEOUT]: %d @ %f\n", kframe, clock.now());
+
+                    // on timeout, the timespec struct is left in a "undefined"
+                    // state, so reset it to avoid another immediate timeout
+                    timeout.tv_sec = 5;
+                    timeout.tv_usec = 0;
                     break;
                 }
                 else if (r == -1 && errno != EINTR)
@@ -580,34 +575,11 @@ namespace RVN
                     // in a YUYV frame, every other sample is luminance, so
                     // total bytes is width x height x 2, so we send width and
                     // bytesused
-#ifndef DEBUG
+
                     // send to sink (this should be synchronous but fast)
                     //printf("[INFO]: forwrding buffer to sink...\n");
                     send_sink(_buffers[buf.index], buf.bytesused);
                     ++kframe;
-#else
-                    printf("[INFO]: converting yuyv to gray\n");
-                    if (_buffers[buf.index]->data() == nullptr)
-                    {
-                        printf("[ERROR]: buffer data appear to be null\n");
-                    }
-                    else if (buf.bytesused >= (_width*_height*2))
-                    {
-                        yuv422_to_gray(_buffers[buf.index]->data(), _width, _height, gray);
-                        normalize(gray, _width, _height);
-
-                        printf("[INFO]: writing frame to file\n");
-                        char ofile[32] = {'\0'};
-                        sprintf(ofile, "./frames/frame-%03d.pgm", kframe);
-                        write_pgm(gray, _width, _height, ofile);
-                        ++kframe;
-                    }
-                    else
-                    {
-                        printf("[ERROR]: received incomplete frame: %d of %d\n",
-                            buf.bytesused, _width*_height*2);
-                    }
-#endif
 
                     if (xioctl(_fd, VIDIOC_QBUF, &buf) < 0)
                     {
@@ -626,18 +598,16 @@ namespace RVN
         {
             //printf("[INFO]: an error occured during streaming, will report\n");
             set_error_msg(err_msg);
+            perror("PERROR: ");
         }
-        //else
-        //{
-            //printf("[INFO]: ending stream\n");
-            //float dur = (float)(t2.tv_sec - t1.tv_sec) * 1000.0f +
-                //(float)(t2.tv_nsec - t1.tv_nsec) / 1000000.0f;
-            //printf("[INFO]: got %d frames in %f ms\n", kframe, dur);
-        //}
+        else
+        {
+            printf("[INFO]: ending stream\n");
+            float dur = (float)(t2.tv_sec - t1.tv_sec) * 1000.0f +
+                (float)(t2.tv_nsec - t1.tv_nsec) / 1000000.0f;
+            printf("[INFO]: got %d frames in %f ms\n", kframe, dur);
+        }
 
-#ifdef DEBUG
-        delete[] gray;
-#endif
     }
     /* ---------------------------------------------------------------------- */
     bool V4L2::stop_stream()
