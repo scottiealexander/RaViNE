@@ -5,7 +5,7 @@ LDFLAGS  := -lm -pthread
 BUILD    := ./build
 OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/app
-TARGET   := ravine_video_test
+TARGET   := ravine_video_test2
 INCLUDE  := -I./
 SRC      :=                                 \
 	$(wildcard ./ravine_packets.cpp)        \

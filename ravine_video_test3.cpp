@@ -12,8 +12,8 @@
 #define MICROSECONDS 1000000
 #define WIDTH 320
 #define HEIGHT 240
-#define LEFT 288 //WIDTH - 32
-#define TOP  208 //HEIGHT - 32
+#define LEFT 96 //WIDTH - 64
+#define TOP  56 //HEIGHT - 64
 /* ========================================================================= */
 int main()
 {
@@ -35,7 +35,7 @@ int main()
         return -1;
     }
 
-    RVN::NeuronFilter neuron("/home/pi/projects/RaViNE/assets/rf-01.pgm", LEFT, TOP, 8);
+    RVN::NeuronFilter neuron("/home/pi/projects/RaViNE/assets/rf-05.pgm", LEFT, TOP, 8);
 
     if (!neuron.isvalid())
     {
@@ -72,7 +72,7 @@ int main()
         return -1;
     }
 
-    RVN::sleep_ms(15000);
+    RVN::sleep_ms(30000);
 
     if (!video.stop_stream())
     {

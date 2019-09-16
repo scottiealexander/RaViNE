@@ -66,7 +66,7 @@ int main(int narg, const char** args)
         return -1;
     }
 
-    RVN::sleep_ms(8000);
+    RVN::sleep_ms(6000);
 
     if (!source.stop_stream())
     {

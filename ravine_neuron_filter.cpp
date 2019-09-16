@@ -38,6 +38,7 @@ namespace RVN
         int width, height;
         if (read_rf_file(rf_file, width, height))
         {
+            printf("[NEURON]: %d x %d @ (%d, %d)\n", width, height, x, y);
             _win = {x, y, width, height};
 
             // we're not yet parallel, so no need to check busy flags
