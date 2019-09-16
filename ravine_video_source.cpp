@@ -490,7 +490,7 @@ namespace RVN
 
         fd_set fds;
 
-        timeval timeout
+        timeval timeout;
         timeout.tv_sec = 5;
         timeout.tv_usec = 0;
 

@@ -72,7 +72,7 @@ int main()
         return -1;
     }
 
-    RVN::sleep_ms(8000);
+    RVN::sleep_ms(15000);
 
     if (!video.stop_stream())
     {

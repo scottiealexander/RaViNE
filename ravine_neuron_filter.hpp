@@ -82,7 +82,7 @@ namespace RVN
 
         Clock _clock;
 
-        static constexpr float _threshold = 0.2f;
+        static constexpr float _threshold = 0.40f;
 
     };
 }
