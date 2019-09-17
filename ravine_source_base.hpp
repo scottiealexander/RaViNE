@@ -9,6 +9,7 @@ namespace RVN
     class Source
     {
     public:
+        virtual ~Source() {}
         virtual bool open_stream() = 0;
         virtual bool start_stream() = 0;
         virtual bool stop_stream() = 0;

@@ -54,31 +54,26 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     NeuronFilter::~NeuronFilter()
     {
-        printf("[NEURON]: deleating packet queues\n");
         delete_queue(_qin);
         delete_queue(_qout);
         if (_rf != nullptr)
         {
-            printf("[NEURON]: deleting _rf\n");
             delete[] _rf;
         }
     }
     /* ---------------------------------------------------------------------- */
     bool NeuronFilter::open_stream()
     {
-        printf("[NEURON]: opening stream\n");
         open_sink_stream();
         return start_stream();
     }
     /* ---------------------------------------------------------------------- */
     bool NeuronFilter::start_stream()
     {
-        printf("[NEURON]: starting stream\n");
         if (!is_open() && isvalid())
         {
             (void)persist();
 
-            printf("[NEURON]: launching process loop\n");
             _process_thread = std::thread(&NeuronFilter::forward_loop, this);
             _open = true;
         }
@@ -101,11 +96,9 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     bool NeuronFilter::close_stream()
     {
-        printf("[NEURON]: stopping stream\n");
         if (is_open()) { (void)stop_stream(); }
         _process_thread.join();
 
-        printf("[NEURON]: closing sink stream\n");
         close_sink_stream();
 
         return isvalid();

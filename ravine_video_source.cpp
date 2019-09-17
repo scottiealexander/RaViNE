@@ -452,8 +452,6 @@ namespace RVN
             }
         }
 
-        printf("[VIDEO]: buffers appear to be queued\n");
-
         if (isvalid())
         {
             v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -502,12 +500,10 @@ namespace RVN
 
         timespec t1, t2;
 
-        //printf("[INFO]: entering main stream loop\n");
         while (persist() && (!error))
         {
             bool frame_ready = false;
 
-            //printf("[INFO]: waiting for next frame\n");
             while (!frame_ready)
             {
                 FD_ZERO(&fds);
@@ -519,7 +515,7 @@ namespace RVN
                 {
                     // in testing, timeouts actually apear not to be a big deal,
                     // occuring ~1 per 8 seconds (@ 15 fps, 360 x 240)
-                    printf("[TIMEOUT]: %d @ %f\n", kframe, clock.now());
+                    //printf("[TIMEOUT]: %d @ %f\n", kframe, clock.now());
 
                     // on timeout, the timespec struct is left in a "undefined"
                     // state, so reset it to avoid another immediate timeout
@@ -612,20 +608,16 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     bool V4L2::stop_stream()
     {
-        printf("[VIDEO]: sending stop signal to process thread\n");
         send_stop();
-        printf("[VIDEO]: joining process thread\n");
         _stream_thread.join();
 
         v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-        printf("[VIDEO]: turing stream off\n");
         if (xioctl(_fd, VIDIOC_STREAMOFF, &type) < 0)
         {
             set_error_msg("Failed to stop vidioc stream");
         }
 
-        printf("[VIDEO]: closing sink stream\n");
         if (!close_sink_stream())
         {
             set_error_msg("Failed to close sink stream");

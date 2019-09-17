@@ -139,7 +139,6 @@ namespace RVN
                 // open the audio stream
                 if (error_check(Pa_StartStream(_pa_stream)))
                 {
-                    printf("[AUDIO]: stream started\n");
                     _stream_open = true;
                 }
             }
@@ -180,17 +179,5 @@ namespace RVN
         (void)close_sink_stream();
         return error_check(Pa_CloseStream(_pa_stream)) && isvalid();
     }
-    /* ---------------------------------------------------------------------- */
-    //void AudioFilter::process(BoolPacket* /* packet */, length_t /* bytes */)
-    //{
-        //// NOTE TODO FIXME WARNING ERROR: we should be receiving a BoolPacket
-        //// from the neuron indicating a spike (in theory we don't even need
-        //// to check, as the neuron should *ONLY* call process() to notify us
-        //// of a spike...)
-        //if (packet->data() > 0.0f)
-        //{
-            //send_spike();
-        //}
-    //}
     /* ====================================================================== */
 }

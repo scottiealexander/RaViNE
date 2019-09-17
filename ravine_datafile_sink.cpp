@@ -15,29 +15,17 @@ namespace RVN
 
         if (_audio_stream.isvalid())
         {
-            printf("[FILE]: audio stream appears valid\n");
 
             // construct a temporary buffer that will be cloned to fill the
             // buffers in the DataConveyor _audio_stream
             AudioBuffer temp(frames_per_buffer);
             temp.fill(0.0f);
 
-            printf("[FILE]: cloning buffer of size %d, should be %d\n", temp.length(), frames_per_buffer);
-
             if (!_audio_stream.fill(temp))
             {
                 set_error_msg("Failed during audio stream fill");
             }
-            else
-            {
-                printf("[FILE]: audio stream filled from clone\n");
-            }
         }
-    }
-    /* ---------------------------------------------------------------------- */
-    DataFileSink::~DataFileSink()
-    {
-        printf("[FILE]: ~DataFileSink\n");
     }
     /* ---------------------------------------------------------------------- */
     bool DataFileSink::open_stream()
@@ -45,10 +33,8 @@ namespace RVN
         if (isvalid() && !isopen())
         {
             // indicate that we should continue streaming to file...
-            printf("[FILE]: setting persist flag to true\n");
-            _state_continue.test_and_set();
+            (void)persist();
 
-            printf("[FILE]: Starting write thread!\n");
             _write_thread = std::thread(&DataFileSink::write_loop, this);
             this->_isopen = true;
         }
@@ -57,7 +43,6 @@ namespace RVN
     /* ---------------------------------------------------------------------- */
     bool DataFileSink::close_stream()
     {
-        printf("[FILE]: Joining write thread\n");
         if (isopen())
         {
             _state_continue.clear();

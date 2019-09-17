@@ -70,7 +70,7 @@ namespace RVN
     {
     public:
         DataFileSink(const char*, int);
-        ~DataFileSink();
+
         bool open_stream() override;
         bool close_stream() override;
         void process(AudioPacket*, length_t) override;
@@ -79,6 +79,14 @@ namespace RVN
         inline bool isopen() const { return _isopen; }
         inline bool isvalid() const { return !_error; }
         inline const std::string& get_error_msg() const { return _error_msg; }
+
+        inline void set_filepath(const std::string& path)
+        {
+            if (!isopen())
+            {
+                _filepath = path;
+            }
+        }
 
     private:
         inline bool persist()
@@ -111,7 +119,7 @@ namespace RVN
         bool _error = false;
         std::string _error_msg;
 
-        const std::string _filepath;
+        std::string _filepath;
         std::ofstream _file;
 
         std::atomic_flag _state_continue = ATOMIC_FLAG_INIT;
