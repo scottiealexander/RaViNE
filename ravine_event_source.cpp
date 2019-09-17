@@ -49,7 +49,9 @@ namespace RVN
             {
                 EventPacket packet(_buffer, time);
                 send_sink(&packet, 1);
+
                 //std::cout << "[REC]: " << (int)_buffer << " @ " << time << std::endl;
+                //_socket.write_some(asio::buffer(&_buffer, bytes));
             }
 
             // if we get the close signal (255) we do *NOT* start another read

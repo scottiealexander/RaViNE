@@ -1,13 +1,23 @@
 //g++ -std=c++11 -DASIO_STANDALONE=1 -pedantic-errors -Wall -Wextra -pthread -I. -I/home/pi/Libraries/asio-1.12.2/include -o ./build/app/ravine_event_test ravine_event_source.cpp ravine_clock.cpp ravine_event_test.cpp
 #include <iostream>
+#include <cstdlib>
 
 #include "ravine_utils.hpp"
 #include "ravine_event_source.hpp"
 
-#define port 65000
-
-int main()
+int main(int narg, const char** args)
 {
+    int port = 65000;
+    if (narg > 1)
+    {
+        port = std::atoi(args[1]);
+        if (port < 1)
+        {
+            printf("[ERROR]: invalid port %s\n", args[1]);
+            return -1;
+        }
+    }
+
     RVN::EventSource source(port);
 
     if (!source.open_stream())
