@@ -29,7 +29,7 @@ LDFLAGS  := -lm -pthread -lasound -lportaudio -lparingbuffer
 BUILD    := ./build
 OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/app
-TARGET   := ravine_video_test
+TARGET   := ravine
 INCLUDE  := -I./ -I$(PA_INCLUDE) -I$(PA_COMMON) -I$(ASIO_INCLUDE)
 SRC      :=                                 \
 	$(wildcard ./ravine_packets.cpp)        \
