@@ -82,8 +82,10 @@ namespace RVN
 
         Clock _clock;
 
-        static constexpr float _threshold = 0.1f;
+        float _threshold;
 
+         //threshold change per sample in %
+        static constexpr float _dthreshold = 0.1f;
     };
 }
 
