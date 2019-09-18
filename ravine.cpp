@@ -47,7 +47,7 @@ int main(int narg, const char** args)
     bool save = false;
     bool listen = false;
     std::string ofile;
-    std::string rffile("/home/pi/projects/RaViNE/assets/rf-05.pgm");
+    std::string rffile("./rf/rf-05.pgm");
 
     int k = 1;
     while (k < narg)
@@ -283,4 +283,3 @@ error:
 
     return EXIT_CODE;
 }
-
