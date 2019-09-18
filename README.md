@@ -24,6 +24,8 @@ gcc -O2 -I./ -c -o pa_ringbuffer.o pa_ringbuffer.c
 # not necessary but sensible
 ar rcs ../../lib/.libs/libparingbuffer.a ./pa_ringbuffer.o
 ```
+
+3. Compile `ravine`:
 ```bash
 # cd to wherever you installed ravine
 # set the location of portaudio and asio
