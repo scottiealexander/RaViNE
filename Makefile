@@ -27,6 +27,7 @@ CXXFLAGS += -DASIO_STANDALONE=1
 
 LDFLAGS  := -lm -pthread -lasound -lportaudio -lparingbuffer
 BUILD    := ./build
+ASSETS   := ./assets
 OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/app
 TARGET   := ravine
@@ -69,7 +70,10 @@ $(APP_DIR)/$(TARGET): $(OBJECTS)
 build:
 	@mkdir -p $(APP_DIR)
 	@mkdir -p $(OBJ_DIR)
-	@mkdir -p $(APP_DIR)/frames
+	@mkdir -p $(APP_DIR)/rf
+	@mkdir -p $(APP_DIR)/data
+	@cp -u $(ASSETS)/*.pgm $(APP_DIR)/rf/
+	@cp -u $(ASSETS)/spike.wf $(APP_DIR)/spike.wf
 
 debug: CXXFLAGS += -DDEBUG -g
 debug: all

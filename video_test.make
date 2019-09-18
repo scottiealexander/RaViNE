@@ -6,14 +6,14 @@ BUILD    := ./build
 OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/app
 TARGET   := ravine_video_test2
-INCLUDE  := -I./
-SRC      :=                                 \
-	$(wildcard ./ravine_packets.cpp)        \
-	$(wildcard ./ravine_clock.cpp)          \
-	$(wildcard ./ravine_video_source.cpp)   \
-	$(wildcard ./ravine_file_sink.cpp)      \
-    $(wildcard ./ravine_frame_buffer.cpp)   \
-	$(wildcard ./ravine_video_test2.cpp)    \
+INCLUDE  := -I./include
+SRC      :=                                       \
+	$(wildcard ./utils/ravine_packets.cpp)        \
+	$(wildcard ./utils/ravine_clock.cpp)          \
+	$(wildcard ./sources/ravine_video_source.cpp) \
+	$(wildcard ./sinks/ravine_file_sink.cpp)      \
+    $(wildcard ./utils/ravine_frame_buffer.cpp)   \
+	$(wildcard ./tests/ravine_video_test2.cpp)    \
 
 OBJECTS := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 

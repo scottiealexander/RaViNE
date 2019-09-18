@@ -30,16 +30,16 @@ BUILD    := ./build
 OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/app
 TARGET   := ravine_audio_test
-INCLUDE  := -I./ -I$(PA_INCLUDE) -I$(PA_COMMON) -I$(ASIO_INCLUDE)
-SRC      :=                                 \
-	$(wildcard ./ravine_pink_noise.cpp)     \
-	$(wildcard ./ravine_spike_waveform.cpp) \
-	$(wildcard ./ravine_packets.cpp)        \
-    $(wildcard ./ravine_clock.cpp)          \
-	$(wildcard ./ravine_audio_filter.cpp)   \
-	$(wildcard ./ravine_datafile_sink.cpp)  \
-    $(wildcard ./ravine_event_source.cpp)   \
-	$(wildcard ./ravine_audio_test1.cpp)    \
+INCLUDE  := -I./include -I$(PA_INCLUDE) -I$(PA_COMMON) -I$(ASIO_INCLUDE)
+SRC      :=                                       \
+	$(wildcard ./utils/ravine_pink_noise.cpp)     \
+	$(wildcard ./utils/ravine_spike_waveform.cpp) \
+	$(wildcard ./utils/ravine_packets.cpp)        \
+    $(wildcard ./utils/ravine_clock.cpp)          \
+	$(wildcard ./filters/ravine_audio_filter.cpp) \
+	$(wildcard ./sinks/ravine_datafile_sink.cpp)  \
+    $(wildcard ./sources/ravine_event_source.cpp) \
+	$(wildcard ./tests/ravine_audio_test1.cpp)    \
 
 OBJECTS := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 
