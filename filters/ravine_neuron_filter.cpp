@@ -33,7 +33,7 @@ namespace RVN
     }
     /* ---------------------------------------------------------------------- */
     NeuronFilter::NeuronFilter(const char* rf_file, int x, int y, int nbuf) :
-        _open(false), _isvalid(true), _rf_mag(0.0f), _threshold(0.0f)
+        _open(false), _isvalid(true), _rf_mag(0.0f)
     {
         int width, height;
         if (read_rf_file(rf_file, width, height))

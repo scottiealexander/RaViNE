@@ -36,3 +36,13 @@ make release
 ```
 
 The program `ravine` can be found in `build/app`.
+
+## Modifications
+The most sensible modifications are to change:
+1. The neurons threshold
+    * The correlation between the image (w/in the receptive field) and the neurons receptive field must be at least this large for the neuron to emit a spike
+2. The threshold adaptivity
+    * The percent change in threshold following each frame
+    * Threshold is increased if a spike is emitted, otherwise it is decreased
+
+Both of these values can be located (and changed) in `include/ravine_neuron_filter.hpp` in the NeuronFilter class definition around lines 85 - 88.
