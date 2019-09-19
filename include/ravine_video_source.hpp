@@ -18,7 +18,7 @@
 
 namespace RVN
 {
-    int xioctl(int fh, int request, void *arg);
+    int xioctl(int fh, unsigned long request, void *arg);
     /* =======================================================================*/
     class MMBuffer : public YUYVImagePacket
     {
