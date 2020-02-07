@@ -1,6 +1,7 @@
 #include <thread>
 #include <chrono>
 #include <atomic>
+#include <iostream>
 #include <functional>
 
 #include <csignal>
@@ -13,13 +14,18 @@
 #include "ravine_neuron_filter.hpp"
 #include "ravine_datafile_sink.hpp"
 
+#include "ravine_argparse.hpp"
+
 #define FRAMERATE 15
 
 #define MICROSECONDS 1000000
 #define WIDTH 320
 #define HEIGHT 240
-#define LEFT 96 //WIDTH - 64
-#define TOP  56 //HEIGHT - 64
+
+// NOTE: assumes a 128x128 RF (which will be centered), smaller or larger RFs
+// will be offset...
+#define LEFT 96
+#define TOP  56
 
 std::atomic_flag GLOBAL_WAIT = ATOMIC_FLAG_INIT;
 
@@ -33,6 +39,21 @@ inline bool keep_waiting()
     return GLOBAL_WAIT.test_and_set(std::memory_order_acquire);
 }
 
+void usage()
+{
+    std::cout <<
+    "\n------------------------------------------------------\n"
+    "Usage: ravine <options> \n"
+    "   -d DEV      - path to the video device to use (e.g. /dev/video0)\n"
+    "   -p PORT     - use port PORT to listen for TCP/IP trigger / event connections\n"
+    "                 set to -1 to omit\n"
+    "   -f DATAFILE - output path for saving data (omit to not save data)\n"
+    "   -r RFFILE   - path to RF file to use for the model neuron\n"
+    "   -h          - print this help message\n"
+    "------------------------------------------------------\n"
+    << std::endl;
+}
+
 /* ========================================================================= */
 int main(int narg, const char** args)
 {
@@ -41,71 +62,19 @@ int main(int narg, const char** args)
     signal(SIGINT, handle_signal);
     (void)keep_waiting();
 
-    const char* dev = "/dev/video0";
+    std::string dev, ofile, rffile;
+    int port;
+    bool save, listen;
 
-    int port = -1;
-    bool save = false;
-    bool listen = false;
-    std::string ofile;
-    std::string rffile("./rf/rf-05.pgm");
-
-    int k = 1;
-    while (k < narg)
+    if (RVN::arg_parse(args, narg, dev, ofile, rffile, port, save, listen) < 0)
     {
-        std::string tmp(args[k]);
-
-        if (tmp == "-p")
-        {
-            if (narg > (k + 1))
-            {
-                port = std::atoi(args[k+1]);
-                listen = true;
-                k += 2;
-            }
-        }
-        else if (tmp == "-f")
-        {
-            if (narg > (k + 1))
-            {
-                ofile.assign(args[k+1]);
-                save = true;
-                k += 2;
-            }
-            else { printf("WTF\n"); }
-        }
-        else if (tmp == "-r")
-        {
-            if (narg > (k + 1))
-            {
-                rffile.assign(args[k+1]);
-                k += 2;
-            }
-        }
-        else
-        {
-            printf("[ERROR]: invalid input \"%s\"\n", tmp.c_str());
-            return -1;
-        }
-    }
-
-    printf("Port: %d | save: %d | listen: %d | ofile: %s | rffile: %s\n",
-        port, save, listen, ofile.c_str(), rffile.c_str());
-
-    if (listen && (port < 1 || port > 65535))
-    {
-        printf("[ERROR]: invalid port %d\n", port);
-        return -1;
-    }
-
-    if (save && ofile.empty())
-    {
-        printf("[ERROR]: cannot set save to true with out valid output file (-f)\n");
+        usage();
         return -1;
     }
 
     RVN::AudioFilter audio;
 
-    RVN::V4L2 video(dev, WIDTH, HEIGHT, FRAMERATE);
+    RVN::V4L2 video(dev.c_str(), WIDTH, HEIGHT, FRAMERATE);
 
     if (!video.open_stream())
     {
