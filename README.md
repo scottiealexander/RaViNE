@@ -37,6 +37,13 @@ make release
 
 The program `ravine` can be found in `build/app`.
 
+## Usage
+Currently, the only documentation can be found in in-source comments and by passing a `-h` flag when running the program, as in:
+```bash
+./ravine -h
+```
+Real docs are a still a wip.
+
 ## Modifications
 The most sensible modifications are to change:
 1. The neurons threshold
