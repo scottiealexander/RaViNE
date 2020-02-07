@@ -31,18 +31,27 @@ ASSETS   := ./assets
 OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/app
 TARGET   := ravine
-INCLUDE  := -I./include -I$(PA_INCLUDE) -I$(PA_COMMON) -I$(ASIO_INCLUDE)
-SRC      :=                                        \
-	$(wildcard ./utils/ravine_packets.cpp)         \
-	$(wildcard ./utils/ravine_clock.cpp)           \
-	$(wildcard ./utils/ravine_pink_noise.cpp)      \
-	$(wildcard ./utils/ravine_spike_waveform.cpp)  \
-	$(wildcard ./sources/ravine_video_source.cpp)  \
-	$(wildcard ./sources/ravine_event_source.cpp)  \
-	$(wildcard ./filters/ravine_audio_filter.cpp)  \
-	$(wildcard ./filters/ravine_neuron_filter.cpp) \
-	$(wildcard ./sinks/ravine_datafile_sink.cpp)   \
-	$(wildcard ./ravine.cpp)                       \
+INCLUDE  :=				\
+	-I./src/filters/	\
+	-I./src/packets/	\
+	-I./src/sinks/		\
+	-I./src/sources/	\
+	-I./src/utils/		\
+	-I$(PA_INCLUDE)		\
+	-I$(PA_COMMON)		\
+	-I$(ASIO_INCLUDE)	\
+
+SRC      :=												\
+	$(wildcard ./src/utils/ravine_clock.cpp)			\
+	$(wildcard ./src/utils/ravine_pink_noise.cpp)		\
+	$(wildcard ./src/utils/ravine_spike_waveform.cpp)	\
+	$(wildcard ./src/packets/ravine_packets.cpp)		\
+	$(wildcard ./src/sources/ravine_video_source.cpp)	\
+	$(wildcard ./src/sources/ravine_event_source.cpp)	\
+	$(wildcard ./src/filters/ravine_audio_filter.cpp)	\
+	$(wildcard ./src/filters/ravine_neuron_filter.cpp)	\
+	$(wildcard ./src/sinks/ravine_datafile_sink.cpp)	\
+	$(wildcard ./ravine.cpp)                       		\
 
 OBJECTS := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 
