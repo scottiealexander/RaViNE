@@ -11,7 +11,7 @@
     * tested using the v19 daily snapshot, though the stable release should also work (I think...)
     * pa_ringbuffer (see **Building** below)
 * [ASIO](https://think-async.com/Asio/)
-    * Tested with [v1.12.2](https://sourceforge.net/projects/asio/files/asio/1.12.2%20%28Stable%29/)
+    * Tested with [v1.12.2](https://sourceforge.net/projects/asio/files/asio/1.12.2%20%28Stable%29/), but more recent version should also work
 
 ## Building
 1. Build portaudio: [instructions](http://portaudio.com/docs/v19-doxydocs/compile_linux.html)
