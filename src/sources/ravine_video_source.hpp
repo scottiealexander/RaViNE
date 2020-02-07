@@ -9,8 +9,8 @@
 #include <thread>
 
 #include "ravine_packets.hpp"
-#include "ravine_sink_base.hpp"
-#include "ravine_source_base.hpp"
+#include "ravine_base_sink.hpp"
+#include "ravine_base_source.hpp"
 
 // conversion factor b/t milliseconds and v4l2 100us exposure units
 #define V4L2_TIME_MS 10

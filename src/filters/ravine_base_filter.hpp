@@ -1,9 +1,9 @@
-#ifndef RAVIE_FILTER_BASE_HPP_
-#define RAVIE_FILTER_BASE_HPP_
+#ifndef RAVIE_BASE_FILTER_HPP_
+#define RAVIE_BASE_FILTER_HPP_
 
 #include "ravine_packets.hpp"
-#include "ravine_sink_base.hpp"
-#include "ravine_source_base.hpp"
+#include "ravine_base_sink.hpp"
+#include "ravine_base_source.hpp"
 
 namespace RVN
 {

@@ -2,7 +2,7 @@
 #define RAVINE_PACKETS_HPP_
 
 #include <cinttypes>
-#include "ravine_packet_base.hpp"
+#include "ravine_base_packet.hpp"
 
 #define RVN_MIN(x, y) ((x) < (y) ? (x) : (y))
 #define RVN_MAX(x, y) ((x) > (y) ? (x) : (y))

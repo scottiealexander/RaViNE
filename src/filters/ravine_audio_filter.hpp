@@ -13,7 +13,7 @@ extern "C"
 #include "ravine_clock.hpp"
 #include "ravine_packets.hpp"
 #include "ravine_pink_noise.hpp"
-#include "ravine_filter_base.hpp"
+#include "ravine_base_filter.hpp"
 #include "ravine_spike_waveform.hpp"
 
 namespace RVN

@@ -1,7 +1,7 @@
-#ifndef RAVIE_SOURCE_BASE_HPP_
-#define RAVIE_SOURCE_BASE_HPP_
+#ifndef RAVIE_BASE_SOURCE_HPP_
+#define RAVIE_BASE_SOURCE_HPP_
 
-#include "ravine_sink_base.hpp"
+#include "ravine_base_sink.hpp"
 
 namespace RVN
 {

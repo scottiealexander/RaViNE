@@ -10,7 +10,7 @@
 
 #include "ravine_frame_buffer.hpp"
 #include "ravine_packets.hpp"
-#include "ravine_sink_base.hpp"
+#include "ravine_base_sink.hpp"
 
 namespace RVN
 {

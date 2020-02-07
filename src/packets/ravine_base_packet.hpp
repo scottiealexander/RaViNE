@@ -1,5 +1,5 @@
-#ifndef RAVINE_PACKET_BASE_HPP_
-#define RAVINE_PACKET_BASE_HPP_
+#ifndef RAVINE_BASE_PACKET_HPP_
+#define RAVINE_BASE_PACKET_HPP_
 
 namespace RVN
 {
@@ -16,4 +16,3 @@ namespace RVN
 }
 
 #endif
-

@@ -6,7 +6,7 @@
 
 #include "ravine_clock.hpp"
 #include "ravine_packets.hpp"
-#include "ravine_filter_base.hpp"
+#include "ravine_base_filter.hpp"
 
 namespace RVN
 {

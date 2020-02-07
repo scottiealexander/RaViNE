@@ -7,8 +7,8 @@
 
 #include "ravine_clock.hpp"
 #include "ravine_packets.hpp"
-#include "ravine_sink_base.hpp"
-#include "ravine_source_base.hpp"
+#include "ravine_base_sink.hpp"
+#include "ravine_base_source.hpp"
 
 namespace RVN
 {

@@ -1,5 +1,5 @@
-#ifndef RAVIE_SINK_BASE_HPP_
-#define RAVIE_SINK_BASE_HPP_
+#ifndef RAVIE_BASE_SINK_HPP_
+#define RAVIE_BASE_SINK_HPP_
 
 #include "ravine_packets.hpp"
 

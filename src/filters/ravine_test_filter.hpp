@@ -4,9 +4,9 @@
 #include <cstdio>
 
 #include "ravine_packets.hpp"
-#include "ravine_sink_base.hpp"
-#include "ravine_source_base.hpp"
-#include "ravine_filter_base.hpp"
+#include "ravine_base_sink.hpp"
+#include "ravine_base_source.hpp"
+#include "ravine_base_filter.hpp"
 
 namespace RVN
 {
