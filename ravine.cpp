@@ -66,7 +66,7 @@ int main(int narg, const char** args)
     int port;
     bool save, listen;
 
-    if (RVN::arg_parse(args, narg, dev, ofile, rffile, port, save, listen) < 0)
+    if (RVN::arg_parse(args, narg, dev, rffile, ofile, port, save, listen) < 0)
     {
         usage();
         return -1;
